@@ -1,0 +1,12 @@
+{
+  "name": "vcf2simplevar",
+  "dxapi": "1.03rc",
+  "version": "0.1",
+  "inputs": [
+    {"name": "vcf", "class": "file"},
+  ],
+  "outputs": [
+    {"name": "simplevar", "class": "gtable"}
+  ],
+  "run": {"file": "parseVcf.py", "interpreter": "python2.7"}
+}

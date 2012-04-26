@@ -63,11 +63,11 @@ tableId = gtable.get_id()
 gtable = dxpy.open_dxgtable(tableId)
 
 
-print tableId
+#print tableId
 
 while count < 100:
-    if count%100000 == 0:
-        print count
+    #if count%100000 == 0:
+        #print count
     count += 1
 
     input = inputFile.readline()
@@ -112,8 +112,8 @@ while count < 100:
             genotypePossibilities = sorted(genotypePossibilities.iteritems(), key=operator.itemgetter(1))
                 
             #print genotypePossibilities[0]
-            if len(genotypePossibilities) > 1:
-                print genotypePossibilities[0][1]/genotypePossibilities[1][1]
+            #if len(genotypePossibilities) > 1:
+                #print genotypePossibilities[0][1]/genotypePossibilities[1][1]
              
             alt = ""
             if genotype == "0/0" or genotype == "0|0" or genotype == False:
@@ -154,21 +154,16 @@ while count < 100:
                 for x in typeList[1::]:
                     if typeList[0] != x:
                         type = "Mixed"
-
-                if type == "Mixed":
-                    print "Mixed"
-                    print chromosome + "\t" + str(lo) + "\t" + str(hi) + "\t" + ref + "\t" + alt + "\t" + str(qual) + "\t" + str(genotypeQuality) + "\t"
-        
                 
                 #gtable.add_rows([chr])
         gtable.add_rows([[chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]])
-        print [chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]
+        #print [chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]
         
         
 gtable.close(True)
-q = gtable.genomic_range_query('chr1', 10000, 11000, 'enclose', 'gri')
-result = gtable.get_rows(query=q)
-print result
+#q = gtable.genomic_range_query('chr1', 10000, 11000, 'enclose', 'gri')
+#result = gtable.get_rows(query=q)
+#print result
     
     
     

@@ -3,7 +3,7 @@
   "dxapi": "1.03rc",
   "version": "0.1",
   "inputs": [
-    {"name": "vcf", "class": "file"},
+    {"name": "vcf", "class": "file"}
   ],
   "outputs": [
     {"name": "simplevar", "class": "gtable"}

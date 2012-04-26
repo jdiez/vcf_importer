@@ -1,0 +1,3 @@
+makeEditDist: 
+	cd resources; python setup.py build
+	cd resources; python setup.py install

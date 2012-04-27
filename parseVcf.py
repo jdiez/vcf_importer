@@ -9,14 +9,19 @@ import dxpy
 
 def main():
 
-    compressNoCall = True
-    compressReference = True
+    compressNoCall = job['input']['compressNoCall']
+    compressReference = job['input']['compressReference']
+    storeFullVcf = job['input']['storeFullVcf']
     
     print job['input']['vcf']
     header = ''
 
+
+    #These prior variables are used for keeping track of contiguous reference/no-call
+    #   in the event that compressReference or compressNoCall is True
     priorType = "None"
     priorPosition = -1
+
 
     mappings_schema = [
             {"name": "chr", "type": "string"}, 
@@ -30,14 +35,16 @@ def main():
             {"name": "genotypeQuality", "type": "int32"},    
         ]
 
-    gtable = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi",'gri')])
-    tableId = gtable.get_id()
-    gtable = dxpy.open_dxgtable(tableId)
+    simpleVar = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi",'gri')])
+    tableId = simpleVar.get_id()
+    simpleVar = dxpy.open_dxgtable(tableId)
 
     inputFile = dxpy.open_dxfile(job['input']['vcf'])
     fileIter = inputFile.__iter__()
     count = 1
-    
+
+    #Additional data will contain the extra format and info columns that are optional in VCF and may not be
+    #   present in the VCF file. These are stored in an extended table 
     additionalData = []
     
     while 1:
@@ -52,9 +59,7 @@ def main():
                 #extract additional column header data
                 if(input[1] != "#"):
                     tabSplit = input.split("\t")
-                    additionalColumns = tabSplit[9:]
-                    for i in range(len(additionalColumns)):
-                        additionalColumns[i] += ":string"
+                    additionalColumns = tabSplit[7:]
                     
                         
             else:
@@ -63,6 +68,10 @@ def main():
                 lo = int(tabSplit[1])
                 hi = lo + len(tabSplit[3])
                 ref = tabSplit[3]
+                
+                #In VCF format, the ALT column holds possible candidate alleles. The actual call as to the
+                #   variant and its zygosity is a combination of ALT and the genotype specified in the info field.
+                #   We store all of the options (including ref) and calculated the actual calls later
                 altOptions = [ref.upper()]
                 altOptions.extend(tabSplit[4].upper().split(","))
                 qual = tabSplit[5]
@@ -71,38 +80,35 @@ def main():
                     type = "No-call"
                 else:
                     qual = int(float(tabSplit[5]))
-                
-                
-                formatColumn = tabSplit[7]
-                infoColumns = tabSplit[8]
-                
-                additionalData.append(tabSplit[9:])
-                genotypeQuality = 0
 
+                formatColumn = tabSplit[7]
+                infoColumn = tabSplit[8]
+                
+                genotypeQuality = 0
+                
                 coverage = re.findall("DP=(\d+);", formatColumn)
                 if(len(coverage) > 0):
                     coverage = int(coverage[0])
                 else:
                     coverage = 0
  
-                
                 if altOptions == [ref, '.']:
                     if type == "No-call":
                         if compressNoCall == False:
-                            gtable.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
-                            print [chr, lo, hi, type, "", "", 0, 0, 0]
+                            simpleVar.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
+                            additionalData.append(tabSplit[7:])
                     else:
                         type = "Ref"
                         if compressReference == False:
-                            gtable.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
-                            print [chr, lo, hi, type, "", "", 0, 0, 0]
+                            simpleVar.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
+                            additionalData.append(tabSplit[7:])
+                            #print [chr, lo, hi, type, "", "", 0, 0, 0]
                 else:
-                    genotypePossibilities = {}
-                    
                     #Find all of the genotypes 
+                    genotypePossibilities = {}
                     for x in tabSplit[9:]:
-                        genotype = getInfoField("GT", infoColumns, x)
-                        genotypeQuality = float(getInfoField("GQ", infoColumns, x))
+                        genotype = getInfoField("GT", infoColumn, x)
+                        genotypeQuality = float(getInfoField("GQ", infoColumn, x))
                         if genotype != False and genotypeQuality != False:
                             if genotypePossibilities.get(genotype) == None:
                                 genotypePossibilities[genotype] = float(genotypeQuality)
@@ -150,45 +156,44 @@ def main():
                             for x in typeList[1::]:
                                 if typeList[0] != x:
                                     type = "Mixed"
-                    #print [chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]
-                    gtable.add_rows([[chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]])
-                    
+                    simpleVar.add_rows([[chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]])
+                    additionalData.append(tabSplit[7:])
                 if compressReference:
                     if priorType == "Ref" and type != priorType:
-                        gtable.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
-                        print [chr, priorPosition, hi, priorType, "", "", 0, 0, 0]
+                        simpleVar.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
+                        additionalData.append(generateEmptyList(len(additionalColumns)))
                 if compressNoCall:
                     if priorType == "No-call" and type != priorType:
-                        gtable.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
-                        print [chr, priorPosition, hi, priorType, "", "", 0, 0, 0]
+                        simpleVar.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
+                        additionalData.append(generateEmptyList(len(additionalColumns)))
                 if type != priorType:
                     priorType = type
-                    priorPosition = lo
-            
-                    
-                    
-                    
-                    
+                    priorPosition = lo 
         except StopIteration:
             break
-    gtable.set_details({"header":header})
-    print additionalColumns
+        
+    simpleVar.set_details({"header":header})    
+    simpleVar.close(block=True)
+    print "SimpleVar table" + json.dumps({'table_id':simpleVar.get_id()})    
+    job['output']['simplevar'] = dxpy.dxlink(simpleVar.get_id())
     
-    gtable.close(block=True)
-    print json.dumps({'table_id':gtable.get_id()})
-    
-    #extendedTable = gtable.extend(additionalColumns)
-    #extendedTable = dxpy.extend_dxgtable(gtable.get_id(), columns=additionalColumns, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi",'gri')])
-    #extendTable.add_rows(additionalData)
-    
-    #print json.dumps({'table_id':extendTable.get_id()})
-    
-    job['output']['simplevar'] = dxpy.dxlink(gtable.get_id())
-    #job['output']['extendedvar'] = dxpy.dxlink(extendTable.get_id())
+    if storeFullVcf:
+        extension = []
+        for x in additionalColumns:
+            extension.append({"name":x, "type":"string"})
+                
+        vcfTable = simpleVar.extend(extension)
+        vcfTable.add_rows(additionalData)
+        vcfTable.set_details({"header":header})    
+        vcfTable.close(block=True)
+        
+        print "Full VCF table" + json.dumps({'table_id':vcfTable.get_id()})
+        
+        job['output']['extendedvar'] = dxpy.dxlink(vcfTable.get_id())
 
-def getInfoField(fieldName, infoColumns, infoContents):
-    if infoColumns.count(fieldName) > 0:
-        entrySplitColumn = infoColumns.split(":")
+def getInfoField(fieldName, infoColumn, infoContents):
+    if infoColumn.count(fieldName) > 0:
+        entrySplitColumn = infoColumn.split(":")
         position = -1
         for i in range(len(entrySplitColumn)):
             if entrySplitColumn[i] == fieldName:
@@ -198,4 +203,9 @@ def getInfoField(fieldName, infoColumns, infoContents):
                     return entrySplitInfo[position]
     return False
     
+def generateEmptyList(columns):
+    result = []
+    for i in range(columns):
+        result.append('')
+    return result
                     

@@ -15,6 +15,9 @@ def main():
     print job['input']['vcf']
     header = ''
 
+    priorType = "None"
+    priorPosition = -1
+
     mappings_schema = [
             {"name": "chr", "type": "string"}, 
             {"name": "lo", "type": "int32"},
@@ -63,11 +66,12 @@ def main():
                 altOptions = [ref.upper()]
                 altOptions.extend(tabSplit[4].upper().split(","))
                 qual = tabSplit[5]
+                type = "Unknown"
                 if qual == ".":
                     type = "No-call"
                 else:
                     qual = int(float(tabSplit[5]))
-                type = "Unknown"
+                
                 
                 formatColumn = tabSplit[7]
                 infoColumns = tabSplit[8]
@@ -83,10 +87,15 @@ def main():
  
                 
                 if altOptions == [ref, '.']:
-                    if type != "No-call":
+                    if type == "No-call":
+                        if compressNoCall == False:
+                            gtable.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
+                            print [chr, lo, hi, type, "", "", 0, 0, 0]
+                    else:
                         type = "Ref"
-                        gtable.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
-                        print [chr, lo, hi, type, "", "", 0, 0, 0]
+                        if compressReference == False:
+                            gtable.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
+                            print [chr, lo, hi, type, "", "", 0, 0, 0]
                 else:
                     genotypePossibilities = {}
                     
@@ -141,8 +150,25 @@ def main():
                             for x in typeList[1::]:
                                 if typeList[0] != x:
                                     type = "Mixed"
-                    print [chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]
+                    #print [chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]
                     gtable.add_rows([[chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]])
+                    
+                if compressReference:
+                    if priorType == "Ref" and type != priorType:
+                        gtable.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
+                        print [chr, priorPosition, hi, priorType, "", "", 0, 0, 0]
+                if compressNoCall:
+                    if priorType == "No-call" and type != priorType:
+                        gtable.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
+                        print [chr, priorPosition, hi, priorType, "", "", 0, 0, 0]
+                if type != priorType:
+                    priorType = type
+                    priorPosition = lo
+            
+                    
+                    
+                    
+                    
         except StopIteration:
             break
     gtable.set_details({"header":header})

@@ -22,7 +22,6 @@ def main():
     priorType = "None"
     priorPosition = -1
 
-
     mappings_schema = [
             {"name": "chr", "type": "string"}, 
             {"name": "lo", "type": "int32"},

@@ -91,6 +91,9 @@ def main():
                     coverage = int(coverage[0])
                 else:
                     coverage = 0
+                    
+                    
+                
  
                 if altOptions == [ref, '.']:
                     if type == "No-call":
@@ -137,10 +140,16 @@ def main():
                         genotypeSplit[i] = int(genotypeSplit[i])
                     genotypeSplit.sort()
 
+                    #In VCF format, the prior character to a sequence change is given in some cases (Ins, Del)
+                    #   we are removing this in our format, and so need to figure out which characters to filter   
+                    overlap = findMatchingSequence(ref, altOptions)
+
                     for x in genotypeSplit:
                         if len(alt) > 0:
-                            alt += ","
-                        alt += altOptions[x]
+                            alt += "/"
+                        alt += altOptions[x][overlap:]
+                        if len(altOptions[x][overlap:]) == 0:
+                            alt += "-"
                         if type != "Weak":
                             typeList = []                
                             #These rules determine how to characterize the type of change that has occurred
@@ -156,7 +165,11 @@ def main():
                             for x in typeList[1::]:
                                 if typeList[0] != x:
                                     type = "Mixed"
-                    simpleVar.add_rows([[chr, lo, hi, type, ref, alt, qual, coverage, int(genotypeQuality)]])
+                        
+                    ref = ref[overlap:]
+                    if len(ref) == 0:
+                        ref = "-"
+                    simpleVar.add_rows([[chr, lo-overlap, lo+len(ref[overlap:]), type, ref[overlap:], alt, qual, coverage, int(genotypeQuality)]])
                     additionalData.append(tabSplit[7:])
                 if compressReference:
                     if priorType == "Ref" and type != priorType:
@@ -190,6 +203,18 @@ def main():
         print "Full VCF table" + json.dumps({'table_id':vcfTable.get_id()})
         
         job['output']['extendedvar'] = dxpy.dxlink(vcfTable.get_id())
+
+def findMatchingSequence(ref, altOptions):
+    position = 0
+    minLength = len(ref)
+    for x in altOptions:
+        if len(x) < minLength:
+            minLength = len(x)
+    for i in range(minLength):
+        for x in altOptions:
+            if ref[i] != x[i]:
+                return i
+    return minLength
 
 def getInfoField(fieldName, infoColumn, infoContents):
     if infoColumn.count(fieldName) > 0:

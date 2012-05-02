@@ -127,7 +127,6 @@ def main():
                     alt = ""
                     if genotype == "0/0" or genotype == "0|0" or genotype == False:
                         if(len(genotypePossibilities) > 1):
-                            type  = "Weak"
                             genotype = genotypePossibilities[1][0]
                             genotypeQuality = 0
                             
@@ -149,18 +148,17 @@ def main():
                         alt += altOptions[x][overlap:]
                         if len(altOptions[x][overlap:]) == 0:
                             alt += "-"
-                        if type != "Weak":
-                            typeList = []                
-                            #These rules determine how to characterize the type of change that has occurred
-                            for x in altOptions:
-                                if len(x) == len(ref) and len(ref) == 1:
-                                    type = "SNP"
-                                elif ref in x:
-                                    type = "Ins"
-                                elif x in ref:
-                                    type = "Del"
-                                else:
-                                    type = "Complex"
+                        typeList = []                
+                        #These rules determine how to characterize the type of change that has occurred
+                        for x in altOptions:
+                            if len(x) == len(ref) and len(ref) == 1:
+                                type = "SNP"
+                            elif ref in x:
+                                type = "Ins"
+                            elif x in ref:
+                                type = "Del"
+                            else:
+                                type = "Complex"
                             for x in typeList[1::]:
                                 if typeList[0] != x:
                                     type = "Mixed"

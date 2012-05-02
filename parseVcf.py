@@ -123,7 +123,6 @@ def main():
                     genotypeQuality = genotypePossibilities[0][1]
                     if len(genotypePossibilities) > 1:
                         genotypeQuality -= genotypePossibilities[1][1]
-                    
                     alt = ""
                     if genotype == "0/0" or genotype == "0|0" or genotype == False:
                         if(len(genotypePossibilities) > 1):

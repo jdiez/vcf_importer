@@ -9,8 +9,7 @@
     {"name": "storeFullVcf", "class": "boolean", "default": true}
   ],
   "outputs": [
-    {"name": "simplevar", "class": "gtable"},
-    {"name": "extendedvar", "class": "gtable", "optional":true}
+    {"name": "simplevar", "class": "gtable"}
   ],
   "run": {"file": "parseVcf.py", "interpreter": "python2.7"}
 }

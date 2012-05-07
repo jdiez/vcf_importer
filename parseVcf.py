@@ -9,6 +9,8 @@ import dxpy
 
 def main():
 
+    print "Running VCF to SimpleVar"
+
     compressNoCall = job['input']['compressNoCall']
     compressReference = job['input']['compressReference']
     storeFullVcf = job['input']['storeFullVcf']
@@ -21,22 +23,6 @@ def main():
     #   in the event that compressReference or compressNoCall is True
     priorType = "None"
     priorPosition = -1
-
-    mappings_schema = [
-            {"name": "chr", "type": "string"}, 
-            {"name": "lo", "type": "int32"},
-            {"name": "hi", "type": "int32"},
-            {"name": "type", "type": "string"},     #change this type to uint once there is an abstraction method for enum
-            {"name": "ref", "type": "string"},
-            {"name": "alt", "type": "string"},
-            {"name": "qual", "type": "int32"},
-            {"name": "coverage", "type": "int32"},
-            {"name": "genotypeQuality", "type": "int32"},    
-        ]
-
-    simpleVar = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi",'gri')])
-    tableId = simpleVar.get_id()
-    simpleVar = dxpy.open_dxgtable(tableId)
 
     inputFile = dxpy.open_dxfile(job['input']['vcf'])
     fileIter = inputFile.__iter__()
@@ -59,9 +45,27 @@ def main():
                 if(input[1] != "#"):
                     tabSplit = input.split("\t")
                     additionalColumns = tabSplit[7:]
+                    mappings_schema = [
+                        {"name": "chr", "type": "string"}, 
+                        {"name": "lo", "type": "int32"},
+                        {"name": "hi", "type": "int32"},
+                        {"name": "type", "type": "string"},     #change this type to uint once there is an abstraction method for enum
+                        {"name": "ref", "type": "string"},
+                        {"name": "alt", "type": "string"},
+                        {"name": "qual", "type": "int32"},
+                        {"name": "coverage", "type": "int32"},
+                        {"name": "genotypeQuality", "type": "int32"},    
+                    ]
+                    for x in tabSplit[7:]:
+                        mappings_schema.append({"name": x, "type":"string"})
                     
-                        
-            else:
+                    #This line commented until substring index has been implemented
+                    #simpleVar = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri'), dxpy.DXGTable.substring_index("type", "typeIndex")])
+                    simpleVar = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
+                    tableId = simpleVar.get_id()
+                    simpleVar = dxpy.open_dxgtable(tableId)
+                    simpleVar.set_details({'header':header})
+            else:                
                 tabSplit = input.split("\t")
                 chr = tabSplit[0]
                 lo = int(tabSplit[1])
@@ -91,20 +95,18 @@ def main():
                 else:
                     coverage = 0
                     
-                    
-                
- 
                 if altOptions == [ref, '.']:
                     if type == "No-call":
                         if compressNoCall == False:
-                            simpleVar.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
-                            additionalData.append(tabSplit[7:])
+                            entry = [chr, lo, hi, type, "", "", 0, 0, 0]
+                            entry.extend(tabSplit[7:])
+                            simpleVar.add_rows([entry])
                     else:
                         type = "Ref"
                         if compressReference == False:
-                            simpleVar.add_rows([[chr, lo, hi, type, "", "", 0, 0, 0]])
-                            additionalData.append(tabSplit[7:])
-                            #print [chr, lo, hi, type, "", "", 0, 0, 0]
+                            entry = [chr, lo, hi, type, "", "", 0, 0, 0]
+                            entry.extend(tabSplit[7:])
+                            simpleVar.add_rows([entry])
                 else:
                     #Find all of the genotypes 
                     genotypePossibilities = {}
@@ -165,40 +167,28 @@ def main():
                     ref = ref[overlap:]
                     if len(ref) == 0:
                         ref = "-"
-                    simpleVar.add_rows([[chr, lo-overlap, lo+len(ref[overlap:]), type, ref[overlap:], alt, qual, coverage, int(genotypeQuality)]])
-                    additionalData.append(tabSplit[7:])
+                    entry = [chr, lo-overlap, lo+len(ref[overlap:]), type, ref[overlap:], alt, qual, coverage, int(genotypeQuality)]
+                    entry.extend(tabSplit[7:])
+                    simpleVar.add_rows([entry])
                 if compressReference:
                     if priorType == "Ref" and type != priorType:
-                        simpleVar.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
-                        additionalData.append(generateEmptyList(len(additionalColumns)))
+                        entry = [chr, priorPosition, hi, type, "", "", 0, 0, 0]
+                        entry.extend(tabSplit[7:])
+                        simpleVar.add_rows([entry])                        
                 if compressNoCall:
                     if priorType == "No-call" and type != priorType:
-                        simpleVar.add_rows([[chr, priorPosition, hi, type, "", "", 0, 0, 0]])
-                        additionalData.append(generateEmptyList(len(additionalColumns)))
+                        entry = [chr, priorPosition, hi, type, "", "", 0, 0, 0]
+                        entry.extend(tabSplit[7:])
+                        simpleVar.add_rows([entry])
                 if type != priorType:
                     priorType = type
                     priorPosition = lo 
         except StopIteration:
             break
-        
-    simpleVar.set_details({"header":header})    
+    
     simpleVar.close(block=True)
     print "SimpleVar table" + json.dumps({'table_id':simpleVar.get_id()})    
     job['output']['simplevar'] = dxpy.dxlink(simpleVar.get_id())
-    
-    if storeFullVcf:
-        extension = []
-        for x in additionalColumns:
-            extension.append({"name":x, "type":"string"})
-                
-        vcfTable = simpleVar.extend(extension)
-        vcfTable.add_rows(additionalData)
-        vcfTable.set_details({"header":header})    
-        vcfTable.close(block=True)
-        
-        print "Full VCF table" + json.dumps({'table_id':vcfTable.get_id()})
-        
-        job['output']['extendedvar'] = dxpy.dxlink(vcfTable.get_id())
 
 def findMatchingSequence(ref, altOptions):
     position = 0

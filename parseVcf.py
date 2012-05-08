@@ -7,6 +7,9 @@ import operator
 import re
 import dxpy
 
+
+
+
 def main():
 
     print "Running VCF to SimpleVar"
@@ -167,7 +170,7 @@ def main():
                     ref = ref[overlap:]
                     if len(ref) == 0:
                         ref = "-"
-                    entry = [chr, lo-overlap, lo+len(ref[overlap:]), type, ref[overlap:], alt, qual, coverage, int(genotypeQuality)]
+                    entry = [chr, lo-overlap, lo+len(ref), type, ref, alt, qual, coverage, int(genotypeQuality)]
                     entry.extend(tabSplit[7:])
                     simpleVar.add_rows([entry])
                 if compressReference:

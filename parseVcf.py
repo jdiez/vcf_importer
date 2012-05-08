@@ -59,8 +59,9 @@ def main():
                         {"name": "coverage", "type": "int32"},
                         {"name": "genotypeQuality", "type": "int32"},    
                     ]
-                    for x in tabSplit[7:]:
-                        mappings_schema.append({"name": x, "type":"string"})
+                    if storeFullVcf:
+                        for x in tabSplit[7:]:
+                            mappings_schema.append({"name": x, "type":"string"})
                     
                     #This line commented until substring index has been implemented
                     #simpleVar = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri'), dxpy.DXGTable.substring_index("type", "typeIndex")])
@@ -102,13 +103,15 @@ def main():
                     if type == "No-call":
                         if compressNoCall == False:
                             entry = [chr, lo, hi, type, "", "", 0, 0, 0]
-                            entry.extend(tabSplit[7:])
+                            if storeFullVcf:
+                                entry.extend(tabSplit[7:])
                             simpleVar.add_rows([entry])
                     else:
                         type = "Ref"
                         if compressReference == False:
                             entry = [chr, lo, hi, type, "", "", 0, 0, 0]
-                            entry.extend(tabSplit[7:])
+                            if storeFullVcf:
+                                entry.extend(tabSplit[7:])
                             simpleVar.add_rows([entry])
                 else:
                     #Find all of the genotypes 
@@ -171,17 +174,20 @@ def main():
                     if len(ref) == 0:
                         ref = "-"
                     entry = [chr, lo-overlap, lo+len(ref), type, ref, alt, qual, coverage, int(genotypeQuality)]
-                    entry.extend(tabSplit[7:])
+                    if storeFullVcf:
+                        entry.extend(tabSplit[7:])
                     simpleVar.add_rows([entry])
                 if compressReference:
                     if priorType == "Ref" and type != priorType:
                         entry = [chr, priorPosition, hi, type, "", "", 0, 0, 0]
-                        entry.extend(tabSplit[7:])
+                        if storeFullVcf:
+                            entry.extend(tabSplit[7:])
                         simpleVar.add_rows([entry])                        
                 if compressNoCall:
                     if priorType == "No-call" and type != priorType:
                         entry = [chr, priorPosition, hi, type, "", "", 0, 0, 0]
-                        entry.extend(tabSplit[7:])
+                        if storeFullVcf:
+                            entry.extend(tabSplit[7:])
                         simpleVar.add_rows([entry])
                 if type != priorType:
                     priorType = type

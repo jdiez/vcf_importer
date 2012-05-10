@@ -1,5 +1,7 @@
 {
-  "name": "vcf2simplevar",
+  "name": "VCF Importer (SimpleVar)",
+  "subtitle": "Convert .vcf file to SimpleVar GTable",
+  "categories": ["Importer"],
   "dxapi": "1.03rc",
   "version": "0.1",
   "inputs": [

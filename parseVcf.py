@@ -46,7 +46,7 @@ def main():
                 header += input
                 #extract additional column header data
                 if(input[1] != "#"):
-                    tabSplit = input.split("\t")
+                    tabSplit = input.strip().split("\t")
                     additionalColumns = tabSplit[7:]
                     mappings_schema = [
                         {"name": "chr", "type": "string"}, 
@@ -60,8 +60,8 @@ def main():
                         {"name": "genotypeQuality", "type": "int32"},    
                     ]
                     if storeFullVcf:
-                        for x in tabSplit[7:]:
-                            mappings_schema.append({"name": x, "type":"string"})
+                        mappings_schema.extend([{"name": "vcf_alt", "type": "string"}, {"name": "vcf_additional_data", "type": "string"}])
+    
                     
                     #This line commented until substring index has been implemented
                     #simpleVar = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri'), dxpy.DXGTable.substring_index("type", "typeIndex")])
@@ -69,7 +69,7 @@ def main():
                     tableId = simpleVar.get_id()
                     simpleVar = dxpy.open_dxgtable(tableId)
                     simpleVar.set_details({'header':header})
-            else:                
+            else:
                 tabSplit = input.split("\t")
                 chr = tabSplit[0]
                 lo = int(tabSplit[1])
@@ -103,16 +103,20 @@ def main():
                     if type == "No-call":
                         if compressNoCall == False:
                             entry = [chr, lo, hi, type, "", "", 0, 0, 0]
-                            if storeFullVcf:
-                                entry.extend(tabSplit[7:])
-                            simpleVar.add_rows([entry])
+                            entry.append(tabSplit[4])
+                            vcfSpecificData = ''
+                            for x in tabSplit[7:]:
+                                vcfSpecificData += x+"\t"
+                            entry.append(vcfSpecificData.strip())
                     else:
                         type = "Ref"
                         if compressReference == False:
                             entry = [chr, lo, hi, type, "", "", 0, 0, 0]
-                            if storeFullVcf:
-                                entry.extend(tabSplit[7:])
-                            simpleVar.add_rows([entry])
+                            entry.append(tabSplit[4])
+                            vcfSpecificData = ''
+                            for x in tabSplit[7:]:
+                                vcfSpecificData += x+"\t"
+                            entry.append(vcfSpecificData.strip())
                 else:
                     #Find all of the genotypes 
                     genotypePossibilities = {}
@@ -175,23 +179,27 @@ def main():
                         ref = "-"
                     entry = [chr, lo-overlap, lo+len(ref), type, ref, alt, qual, coverage, int(genotypeQuality)]
                     if storeFullVcf:
-                        entry.extend(tabSplit[7:])
+                        entry.append(tabSplit[4])
+                        vcfSpecificData = ''
+                        for x in tabSplit[7:]:
+                            vcfSpecificData += x+"\t"
+                        entry.append(vcfSpecificData.strip())
                     simpleVar.add_rows([entry])
                 if compressReference:
                     if priorType == "Ref" and type != priorType:
                         entry = [chr, priorPosition, hi, type, "", "", 0, 0, 0]
                         if storeFullVcf:
-                            entry.extend(tabSplit[7:])
+                            entry.extend([".", ""])
                         simpleVar.add_rows([entry])                        
                 if compressNoCall:
                     if priorType == "No-call" and type != priorType:
                         entry = [chr, priorPosition, hi, type, "", "", 0, 0, 0]
                         if storeFullVcf:
-                            entry.extend(tabSplit[7:])
+                            entry.extend([".",""])
                         simpleVar.add_rows([entry])
                 if type != priorType:
                     priorType = type
-                    priorPosition = lo 
+                    priorPosition = lo  
         except StopIteration:
             break
     

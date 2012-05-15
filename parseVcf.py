@@ -88,8 +88,12 @@ def main():
                 else:
                     qual = int(float(tabSplit[5]))
 
-                formatColumn = tabSplit[7]
-                infoColumn = tabSplit[8]
+                formatColumn = ''
+                infoColumn = ''
+                if len(tabSplit) > 7:
+                    formatColumn = tabSplit[7]
+                if len(tabSplit) > 8:
+                    infoColumn = tabSplit[8]
                 
                 genotypeQuality = 0
                 
@@ -130,37 +134,75 @@ def main():
                                 genotypePossibilities[genotype] += float(genotypeQuality)
                         else:
                             genotypeQuality = 0
-                    genotypePossibilities = sorted(genotypePossibilities.iteritems(), key=operator.itemgetter(1), reverse=True)
-                    genotype = genotypePossibilities[0][0]
-                    genotypeQuality = genotypePossibilities[0][1]
-                    if len(genotypePossibilities) > 1:
-                        genotypeQuality -= genotypePossibilities[1][1]
-                    alt = ""
-                    if genotype == "0/0" or genotype == "0|0" or genotype == False:
-                        if(len(genotypePossibilities) > 1):
-                            genotype = genotypePossibilities[1][0]
-                            genotypeQuality = 0
+                    if len(genotypePossibilities) > 0:
+                        genotypePossibilities = sorted(genotypePossibilities.iteritems(), key=operator.itemgetter(1), reverse=True)
+                        genotype = genotypePossibilities[0][0]
+                        genotypeQuality = genotypePossibilities[0][1]
+                        if len(genotypePossibilities) > 1:
+                            genotypeQuality -= genotypePossibilities[1][1]
+                        alt = ""
+                        if genotype == "0/0" or genotype == "0|0" or genotype == False:
+                            if(len(genotypePossibilities) > 1):
+                                genotype = genotypePossibilities[1][0]
+                                genotypeQuality = 0
+                                
+                        genotypeSplit = re.split("[\|\/]", genotype)
+                        for i in range(len(genotypeSplit)):
                             
-                    genotypeSplit = re.split("[\|\/]", genotype)
-                    for i in range(len(genotypeSplit)):
-                        
-                    #This is done to ensure the convention of placing the ref allele first
-                    #   in practice, it seems that all VCFs already place the ref first
-                        genotypeSplit[i] = int(genotypeSplit[i])
-                    genotypeSplit.sort()
-
-                    #In VCF format, the prior character to a sequence change is given in some cases (Ins, Del)
-                    #   we are removing this in our format, and so need to figure out which characters to filter   
-                    overlap = findMatchingSequence(ref, altOptions)
-
-                    for x in genotypeSplit:
-                        if len(alt) > 0:
-                            alt += "/"
-                        alt += altOptions[x][overlap:]
-                        if len(altOptions[x][overlap:]) == 0:
-                            alt += "-"
-                        typeList = []                
-                        #These rules determine how to characterize the type of change that has occurred
+                        #This is done to ensure the convention of placing the ref allele first
+                        #   in practice, it seems that all VCFs already place the ref first
+                            genotypeSplit[i] = int(genotypeSplit[i])
+                        genotypeSplit.sort()
+    
+                        #In VCF format, the prior character to a sequence change is given in some cases (Ins, Del)
+                        #   we are removing this in our format, and so need to figure out which characters to filter   
+                        overlap = findMatchingSequence(ref, altOptions)
+    
+                        for x in genotypeSplit:
+                            if len(alt) > 0:
+                                alt += "/"
+                            alt += altOptions[x][overlap:]
+                            if len(altOptions[x][overlap:]) == 0:
+                                alt += "-"
+                            typeList = []                
+                            #These rules determine how to characterize the type of change that has occurred
+                            for x in altOptions:
+                                if len(x) == len(ref) and len(ref) == 1:
+                                    type = "SNP"
+                                elif ref in x:
+                                    type = "Ins"
+                                elif x in ref:
+                                    type = "Del"
+                                else:
+                                    type = "Complex"
+                                for x in typeList[1::]:
+                                    if typeList[0] != x:
+                                        type = "Mixed"
+                            
+                        ref = ref[overlap:]
+                        if len(ref) == 0:
+                            ref = "-"
+                        entry = [chr, lo-overlap, lo+len(ref), type, ref, alt, qual, coverage, int(genotypeQuality)]
+                        if storeFullVcf:
+                            entry.append(tabSplit[4])
+                            vcfSpecificData = ''
+                            for x in tabSplit[7:]:
+                                vcfSpecificData += x+"\t"
+                            entry.append(vcfSpecificData.strip())
+                        simpleVar.add_rows([entry])
+                    else:
+                        overlap = findMatchingSequence(ref, altOptions)
+                        ref = ref[overlap:]
+                        alt = ''
+                        for x in altOptions[1:]:
+                            if len(alt) > 0:
+                                alt += "/"
+                            alt += x[overlap:]
+                            if len(x[overlap:]) == 0:
+                                alt += "-"
+                        typeList = []
+                        type = ''
+                            #These rules determine how to characterize the type of change that has occurred
                         for x in altOptions:
                             if len(x) == len(ref) and len(ref) == 1:
                                 type = "SNP"
@@ -170,21 +212,21 @@ def main():
                                 type = "Del"
                             else:
                                 type = "Complex"
-                            for x in typeList[1::]:
-                                if typeList[0] != x:
-                                    type = "Mixed"
-                        
-                    ref = ref[overlap:]
-                    if len(ref) == 0:
-                        ref = "-"
-                    entry = [chr, lo-overlap, lo+len(ref), type, ref, alt, qual, coverage, int(genotypeQuality)]
-                    if storeFullVcf:
-                        entry.append(tabSplit[4])
-                        vcfSpecificData = ''
-                        for x in tabSplit[7:]:
-                            vcfSpecificData += x+"\t"
-                        entry.append(vcfSpecificData.strip())
-                    simpleVar.add_rows([entry])
+                            typeList.append(type)
+                        for x in typeList[1::]:
+                            if typeList[0] != x:
+                                type = "Mixed"
+                        if qual == ".":
+                            qual = 0
+                        entry = [chr, lo-overlap, lo+len(ref), type, ref, alt, qual, coverage, 0]
+                        if storeFullVcf:
+                            entry.append(tabSplit[4])
+                            vcfSpecificData = ''
+                            for x in tabSplit[7:]:
+                                vcfSpecificData += x+"\t"
+                            entry.append(vcfSpecificData.strip())
+                        checkRowValidity(entry, storeFullVcf)
+                        simpleVar.add_rows([entry])
                 if compressReference:
                     if priorType == "Ref" and type != priorType:
                         entry = [chr, priorPosition, hi, type, "", "", 0, 0, 0]
@@ -236,4 +278,61 @@ def generateEmptyList(columns):
     for i in range(columns):
         result.append('')
     return result
-                    
+
+def checkRowValidity(row, storeFullVcf):
+    if storeFullVcf:
+        if len(row) != 9:
+            print False
+            print row
+    else:
+        if len(row) != 7:
+            print False
+            print row
+            
+    if type(row[0]) is not str:
+        print 0
+    if type(row[1]) is not int:
+        print 1
+    if type(row[2]) is not int:
+        print 2
+    if type(row[3]) is not str:
+        print 3
+    if type(row[4]) is not str:
+        print 4
+    if type(row[5]) is not str:
+        print 5
+    if type(row[6]) is not int:
+        print 6
+    if type(row[7]) is not int:
+        print 7
+    if type(row[8]) is not int:
+        print 8
+    if storeFullVcf:
+        if type(row[9]) is not str:
+            print 9
+        if type(row[10]) is not str:
+            print 10
+            
+    
+    if type(row[0]) is str:
+        if type(row[1]) is int:
+            if type(row[2]) is int:
+                if type(row[3]) is str:
+                    if type(row[4]) is str:
+                        if type(row[5]) is str:
+                            if type(row[6]) is int:
+                                if type(row[7]) is int:
+                                    if type(row[8]) is int:
+                                        if storeFullVcf:
+                                            if type(row[9]) is str:
+                                                if type(row[10]) is str:
+                                                    return True
+                                        else:
+                                            return True
+    print False
+    print row
+    return False
+        
+
+
+

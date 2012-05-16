@@ -20,8 +20,9 @@ def main():
     
     print job['input']['vcf']
     header = ''
-
-
+    
+    
+    
     #These prior variables are used for keeping track of contiguous reference/no-call
     #   in the event that compressReference or compressNoCall is True
     priorType = "None"
@@ -68,7 +69,7 @@ def main():
                     simpleVar = dxpy.new_dxgtable(mappings_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
                     tableId = simpleVar.get_id()
                     simpleVar = dxpy.open_dxgtable(tableId)
-                    simpleVar.set_details({'header':header})
+                    simpleVar.set_details({'header':header, 'original_contigset':job['input']['reference']})
             else:
                 tabSplit = input.split("\t")
                 chr = tabSplit[0]
@@ -225,7 +226,6 @@ def main():
                             for x in tabSplit[7:]:
                                 vcfSpecificData += x+"\t"
                             entry.append(vcfSpecificData.strip())
-                        checkRowValidity(entry, storeFullVcf)
                         simpleVar.add_rows([entry])
                 if compressReference:
                     if priorType == "Ref" and type != priorType:
@@ -241,7 +241,7 @@ def main():
                         simpleVar.add_rows([entry])
                 if type != priorType:
                     priorType = type
-                    priorPosition = lo  
+                    priorPosition = lo
         except StopIteration:
             break
     

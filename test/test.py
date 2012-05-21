@@ -23,7 +23,7 @@ def makeInputs():
     contig_set = job.describe()["output"]["contig_set"]
 
     vcf = dxpy.upload_local_file(os.path.join(test_resources_dir, "variants.vcf"), wait_on_close=True)
-    program_input = {"vcf": dxpy.dxlink(vcf), "compressReference":True, "compressNoCall":True, "reference": contig_set}        
+    program_input = {"vcf": dxpy.dxlink(vcf), "compress_reference":True, "compress_no_call":True, "reference": contig_set}        
     print program_input
     return program_input
 

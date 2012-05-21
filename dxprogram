@@ -7,9 +7,9 @@
   "inputs": [
     {"name": "vcf", "class": "file"},
     {"name": "reference", "class": "record", "type": "ContigSet"},
-    {"name": "compressReference", "class": "boolean", "default": true},
-    {"name": "compressNoCall", "class": "boolean", "default": true},
-    {"name": "storeFullVcf", "class": "boolean", "default": true}
+    {"name": "compress_reference", "class": "boolean", "default": true},
+    {"name": "compress_no_call", "class": "boolean", "default": true},
+    {"name": "store_full_vcf", "class": "boolean", "default": true}
   ],
   "outputs": [
     {"name": "simplevar", "class": "gtable"}

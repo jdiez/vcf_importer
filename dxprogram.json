@@ -9,10 +9,11 @@
     {"name": "reference", "class": "record", "type": "ContigSet"},
     {"name": "compress_reference", "class": "boolean", "default": true},
     {"name": "compress_no_call", "class": "boolean", "default": true},
-    {"name": "store_full_vcf", "class": "boolean", "default": true}
+    {"name": "store_full_vcf", "class": "boolean", "default": true},
+    {"name": "store_samples_individually", "class":"boolean", "default":false}
   ],
   "outputs": [
-    {"name": "simplevar", "class": "gtable"}
+    {"name": "simplevar", "class": "array:gtable"}
   ],
   "run": {"file": "parseVcf.py", "interpreter": "python2.7"}
 }

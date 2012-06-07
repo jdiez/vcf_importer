@@ -40,13 +40,15 @@ def main():
         for x in tabSplit[9:]:
             table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
             details = {'sample':x, 'original_contigset':job['input']['reference']}
-            setTableDetails(table, details)
+            table.set_details(details)
+            print table.get_details()
             simpleVarArray.append(table)        
     else:
         table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
         details = {'original_contigset':job['input']['reference']}
         setTableDetails(table, details)
-        simpleVarArray.append(dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')]))
+        print table.get_details()
+        simpleVarArray.append(table)
         
         
     

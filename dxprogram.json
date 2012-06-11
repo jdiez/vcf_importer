@@ -15,7 +15,7 @@
     {"name": "store_samples_individually", "class":"boolean", "default":false}
   ],
   "outputs": [
-    {"name": "simplevar", "class": "array:gtable"}
+    {"name": "simplevar", "class": "array:gtable", "type": {"$and": ["SimpleVar", "gri"]}}
   ],
   "run": {"file": "parseVcf.py", "interpreter": "python2.7"}
 }

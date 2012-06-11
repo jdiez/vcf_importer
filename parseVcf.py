@@ -41,6 +41,7 @@ def main():
             table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
             details = {'sample':x, 'original_contigset':job['input']['reference']}
             table.set_details(details)
+            table.add_types(["SimpleVar", "gri"])
             print table.get_details()
             simpleVarArray.append(table)        
     else:

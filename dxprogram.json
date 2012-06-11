@@ -1,10 +1,11 @@
 {
   "name": "vcf_to_simplevar",
-  "title": "VCF Importer (SimpleVar)",
-  "summary": "Convert .vcf file to SimpleVar GTable",
-  "categories": ["Importer"],
+  "title": "Import VCF",
+  "summary": "Converts .vcf file to a DNAnexus table",
+  "description": "Converts .vcf file to a DNAnexus table for subsequent processing and visualization in the DNAnexus platform",
+  "categories": ["Importers"],
   "dxapi": "1.03rc",
-  "version": "0.1",
+  "version": "0.0.1",
   "inputs": [
     {"name": "vcf", "class": "file"},
     {"name": "reference", "class": "record", "type": "ContigSet"},

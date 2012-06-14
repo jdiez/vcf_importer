@@ -9,6 +9,7 @@
   "inputs": [
     {"name": "vcf", "class": "file"},
     {"name": "reference", "class": "record", "type": "ContigSet"},
+    {"name": "output name", "class":"string", "optional":true},
     {"name": "compress_reference", "class": "boolean", "default": true},
     {"name": "compress_no_call", "class": "boolean", "default": true},
     {"name": "store_full_vcf", "class": "boolean", "default": true},

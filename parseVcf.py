@@ -16,7 +16,8 @@ def main():
     print "Running VCF to SimpleVar"
     print job['input']['vcf']
     header = ''
-        
+    
+    
     inputFile = dxpy.download_dxfile(job['input']['vcf'], 'output.vcf')
     variants_schema = [
       {"name": "chr", "type": "string"}, 
@@ -30,6 +31,14 @@ def main():
       {"name": "genotypeQuality", "type": "int32"},    
          ]
     
+    if 'output name' in job['input']:
+        name =  job['input']['output name']
+    else:
+        fileName = dxpy.DXFile(job['input']['vcf']['$dnanexus_link']).describe()['name']
+        name = fileName.split(".")[0]
+        for x in fileName.split(".")[1:-1]:
+            name += "."+x
+    
     simpleVarArray = []
     if job['input']['store_full_vcf']:
         variants_schema.extend([{"name": "vcf_alt", "type": "string"}, {"name": "vcf_additional_data", "type": "string"}])
@@ -42,12 +51,14 @@ def main():
             details = {'sample':x, 'original_contigset':job['input']['reference']}
             table.set_details(details)
             table.add_types(["SimpleVar", "gri"])
+            table.rename(name + "sample " + x)
             print table.get_details()
             simpleVarArray.append(table)        
     else:
         table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
         details = {'original_contigset':job['input']['reference']}
         setTableDetails(table, details)
+        table.rename(name+".vcf")
         print table.get_details()
         simpleVarArray.append(table)
         

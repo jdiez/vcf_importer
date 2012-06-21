@@ -281,10 +281,7 @@ def parseVcfLine(storeSamplesIndividually, input, sample):
     lo = int(tabSplit[1])-1
     ref = tabSplit[3].replace(".","")
     hi = lo + len(ref)
-    print "Printing ref"
-    for i in ref:
-        print i
-    print "Done"
+
 
         
     #In VCF format, the ALT column holds possible candidate alleles. The actual call as to the
@@ -296,7 +293,9 @@ def parseVcfLine(storeSamplesIndividually, input, sample):
     type = "Unknown"
     overlap = checkOverlap(ref, altOptions)
     lo -= overlap
-    hi -= overlap
+    #Subtract once to set the starting point to be the same as lo,
+    #and again to account for the ref string being longer
+    hi -= 2*overlap
     if qual == ".":
         type = "No-call"
         qual = 0

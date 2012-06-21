@@ -64,7 +64,7 @@ def main():
         
         
     
-    command = "dx_vcfToSimplevar"
+    command = "dx_vcfToSimplevar2"
     for x in simpleVarArray:
         command += " --table_id " + str(x.get_id())
     command += " --vcf_file output.vcf"
@@ -77,8 +77,9 @@ def main():
     command += " --extract_header"
     if job['input']['store_samples_individually']:
         command += " --store_samples_individually"
+    #command += " --infer_no_call"
     print command
-    subprocess.call(command, shell=True)
+    subprocess.check_call(command, shell=True)
     
     for simpleVar in simpleVarArray:
         simpleVar.close()

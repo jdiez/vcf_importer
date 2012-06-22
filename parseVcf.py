@@ -77,7 +77,7 @@ def main():
     command += " --extract_header"
     if job['input']['store_samples_individually']:
         command += " --store_samples_individually"
-    #command += " --infer_no_call"
+
     print command
     subprocess.check_call(command, shell=True)
     

@@ -22,8 +22,6 @@ def main():
 
     (opts, args) = parser.parse_args()
     
-    print opts.store_samples_individually
-    
     simpleVarArray = []
     priors = []
     for x in opts.simplevar_id:
@@ -35,7 +33,6 @@ def main():
     storeFullVcf = opts.store_full_vcf
     extractHeader = opts.extract_header
 
-    
     priorType = "None"
     priorPosition = -1
 
@@ -45,8 +42,12 @@ def main():
     #Additional data will contain the extra format and info columns that are optional in VCF and may not be
     #   present in the VCF file. These are stored in an extended table 
     additionalData = []
-    refBuffer = []
+
+    refBuffer = {}
+    for sample in range(len(simpleVarArray)):
+        refBuffer[sample] = []
     
+
     try:
         originalContig = simpleVarArray[0].get_details()['original_contigset']
     except:
@@ -65,14 +66,12 @@ def main():
                 regions[x[0]] = []
             min = int(x[1])
             max = int(x[2])
-            if max >= contigSizes[x[0]]:
-                max = contigSizes[x[0]]-1
+            if max >= contigSizes[contigNames.index(x[0])]:
+                max = contigSizes[contigNames.index(x[0])]-1
             regions[x[0]].append([min, max])
     else:
         for i in range(len(contigNames)):
             regions[contigNames[i]] = [[0, contigSizes[i]-1]]
-    
-    print regions
     
     highestObservedInRegion = {}
     for sample in range(len(simpleVarArray)):
@@ -101,7 +100,6 @@ def main():
                         applyHeaderInfomation(simpleVarArray, header)
             else:
                 for sample in range(len(simpleVarArray)):
-                    #print "Priors: " + str(priors[sample]['chr'])
                     simpleVar = simpleVarArray[sample]
                     vcfLine = parseVcfLine(opts.store_samples_individually, input, sample)
                     regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
@@ -112,7 +110,6 @@ def main():
                             lastRegion[sample][1] = regionIndex
                             priors[sample]['position'] = regions[vcfLine['chr']][regionIndex][0]
                             priors[sample]['chr'] = vcfLine['chr']
-                        #print highestObservedInRegion[sample]
                         if vcfLine['hi'] > highestObservedInRegion[sample][vcfLine['chr']][regionIndex]:
                             highestObservedInRegion[sample][vcfLine['chr']][regionIndex] = vcfLine['hi']
                         if vcfLine['altOptions'] == [vcfLine['ref'], '.'] or vcfLine == [vcfLine['ref']]:
@@ -122,35 +119,29 @@ def main():
                             if writeVariantRow(simpleVar, vcfLine, storeFullVcf) == "Ref":
                                 writeReferenceRow(simpleVar, vcfLine, priors, sample, compressReference, storeFullVcf, refBuffer)
                             else:
-                                writeReferenceBuffer(simpleVar, refBuffer, storeFullVcf)
+                                writeReferenceBuffer(simpleVar, refBuffer, sample, storeFullVcf)
     
                         #If there are intervening blank lines, write those as no-call
-                        #print "Prior position"+str(priors[sample]['position'])
-                        #print "VcfLine"+str(vcfLine['lo'])
                         if vcfLine['lo'] - priors[sample]['position'] > 0:
                             priors[sample]['position']
                             writeNoCallRow(simpleVar, priors[sample]['chr'], priors[sample]['position'], vcfLine['lo'], storeFullVcf)
                         priors[sample]['position'] = vcfLine['hi']
                     else:
-                        writeReferenceBuffer(simpleVar, refBuffer, storeFullVcf)
+                        writeReferenceBuffer(simpleVar, refBuffer, sample, storeFullVcf)
 
         except StopIteration:
             break
-    writeReferenceBuffer(simpleVar, refBuffer, storeFullVcf)
-    
-    print highestObservedInRegion
-    print highestObservedInRegion[0]
-    
-    
+    for sample in range(len(simpleVarArray)):
+        writeReferenceBuffer(simpleVarArray[sample], refBuffer, sample, storeFullVcf)
+
     for sample in range(len(simpleVarArray)):
         simpleVar = simpleVarArray[sample]
         for chr, reg in highestObservedInRegion[sample].iteritems():
-            print chr
-            print reg
             for i in range(len(reg)):
                 if reg[i] < regions[chr][i][1]:
-                    blah = 5
-                    writeNoCallRow(simpleVar, chr, reg[i], regions[chr][i][1], storeFullVcf)
+                    writeNoCallRow(simpleVarArray[sample], chr, reg[i], regions[chr][i][1], storeFullVcf)
+    
+
     
 def checkWithinRegion(chr, lo, hi, regions):
     for x in regions[chr]:
@@ -161,12 +152,10 @@ def checkWithinRegion(chr, lo, hi, regions):
 def writeReferenceRow(simpleVar, vcfLine, priors, sample, compressReference, storeFullVcf, refBuffer):
     #Always write the reference row if we are not compressing
     if compressReference == False:
-        writeReferenceRowData(simpleVar, vcfLine, storeFullVcf, False, refBuffer)
-
+        writeReferenceRowData(simpleVar, vcfLine, storeFullVcf, False, refBuffer, sample)
     else:
-        writeReferenceRowData(simpleVar, vcfLine, storeFullVcf, True, refBuffer)
-
-        
+        writeReferenceRowData(simpleVar, vcfLine, storeFullVcf, True, refBuffer, sample)
+                
 def writeVariantRow(simpleVar, line, storeFullVcf):
     
     chr = line['chr']
@@ -334,9 +323,6 @@ def parseVcfLine(storeSamplesIndividually, input, sample):
 
 def checkOverlap(ref, altOptions):
     overlap = 1
-    print "Check alt options"
-    print ref
-    print altOptions
     for x in altOptions:
         if len(x) > 0 and len(ref) > 0:
             if x[0] != ref[0]:
@@ -383,8 +369,8 @@ def generateEmptyList(columns):
         result.append('')
     return result
 
-def writeReferenceRowData(simpleVar, vcfLine, storeFullVcf, storeInBuffer, refBuffer):
-    print "writeReference"
+def writeReferenceRowData(simpleVar, vcfLine, storeFullVcf, storeInBuffer, refBuffer, sample):
+
     chr = vcfLine['chr']
     lo = vcfLine['lo']
     hi = vcfLine['hi']
@@ -403,9 +389,9 @@ def writeReferenceRowData(simpleVar, vcfLine, storeFullVcf, storeInBuffer, refBu
             vcfSpecificData += x+"\t"
         entry.append(vcfSpecificData.strip())
     if storeInBuffer:
-        refBuffer.append(entry)
+        refBuffer[sample].append(entry[:])
     else:
-        simpleVar.add_rows([entry])
+        simpleVar.add_rows([entry][:])
 
 def writeCompressedReferenceRow(simpleVar, chr, lo, hi, storeFullVcf):
     entry = [chr, lo, hi, "Ref", "", "", 0, 0, 0]
@@ -417,13 +403,11 @@ def writeNoCallRow(simpleVar, chr, lo, hi, storeFullVcf):
     entry = [chr, lo, hi, "No-call", "", "", 0, 0, 0]
     if storeFullVcf:
         entry.extend([".", ""])
-    simpleVar.add_rows([entry])
-    
-    
-    
-def writeReferenceBuffer(simpleVar, refBuffer, storeFullVcf):
+    simpleVar.add_rows([entry][:])
+        
+def writeReferenceBuffer(simpleVar, refBuffer, sample, storeFullVcf):
     row = []
-    for x in refBuffer:
+    for x in refBuffer[sample][:]:
         if row == []:
             row = [x[0], x[1], x[2], "Ref", "", "", 0, 0, 0]
         elif row[2] == x[1]:
@@ -437,8 +421,8 @@ def writeReferenceBuffer(simpleVar, refBuffer, storeFullVcf):
     if row != []:
         if storeFullVcf:
             row.extend([".",""])
-        simpleVar.add_rows([row])
-    refBuffer[:] = []
+        simpleVar.add_rows([row][:])
+    refBuffer[sample][:] = []
 
 
 

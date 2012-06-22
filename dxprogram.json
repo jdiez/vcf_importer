@@ -11,7 +11,7 @@
     {"name": "reference", "class": "record", "type": "ContigSet"},
     {"name": "output name", "class":"string", "optional":true},
     {"name": "compress_reference", "class": "boolean", "default": false},
-    {"name": "compress_no_call", "class": "boolean", "default": false},
+    {"name": "infer_no_call", "class": "boolean", "default": false},
     {"name": "store_full_vcf", "class": "boolean", "default": true},
     {"name": "store_samples_individually", "class":"boolean", "default":false}
   ],

@@ -70,8 +70,8 @@ def main():
     command += " --vcf_file output.vcf"
     if job['input']['compress_reference']:
         command += " --compress_reference"
-    if job['input']['compress_no_call']:
-        command += " --compress_no_call"
+    if job['input']['infer_no_call']:
+        command += " --infer_no_call"
     if job['input']['store_full_vcf']:
         command += " --store_full_vcf"
     command += " --extract_header"

@@ -16,9 +16,11 @@ def main():
     print "Running VCF to SimpleVar"
     print job['input']['vcf']
     header = ''
-    
-    
+
     inputFile = dxpy.download_dxfile(job['input']['vcf'], 'output.vcf')
+    
+    header = extractHeader(open('output.vcf', 'r')).strip()
+  
     variants_schema = [
       {"name": "chr", "type": "string"}, 
       {"name": "lo", "type": "int32"},
@@ -27,9 +29,16 @@ def main():
       {"name": "ref", "type": "string"},
       {"name": "alt", "type": "string"},
       {"name": "qual", "type": "int32"},
-      {"name": "coverage", "type": "int32"},
-      {"name": "genotypeQuality", "type": "int32"},    
+      {"name": "coverage", "type": "string"},
+      {"name": "total_coverage", "type": "int32"},
+      {"name": "genotype_quality", "type": "int32"}
          ]
+    
+    #if re.search("ID=AF,Number=A,Type=Float", header) != None:
+    #    print "Affirmative"
+    #    variants_schema.append({"name": "coverage", "type": "string"})
+    #print "Negative"
+    #variants_schema.extend([{"name": "total_coverage", "type": "int32"}, {"name": "genotype_quality", "type": "int32"} ])
     
     if 'output name' in job['input']:
         name =  job['input']['output name']
@@ -43,12 +52,11 @@ def main():
     if job['input']['store_full_vcf']:
         variants_schema.extend([{"name": "vcf_alt", "type": "string"}, {"name": "vcf_additional_data", "type": "string"}])
 
-    if job['input']['store_samples_individually']:
-        header = extractHeader(open('output.vcf', 'r')).strip()
+    if job['input']['store_samples_individually']:        
         tabSplit = header.strip().split("\t")
         for x in tabSplit[9:]:
             table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
-            details = {'sample':x, 'original_contigset':job['input']['reference']}
+            details = {'sample':x, 'original_contigset':job['input']['reference'], 'original_file':job['input']['vcf']}
             table.set_details(details)
             table.add_types(["SimpleVar", "gri"])
             table.rename(name + "sample " + x)
@@ -56,8 +64,9 @@ def main():
             simpleVarArray.append(table)        
     else:
         table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
-        details = {'original_contigset':job['input']['reference']}
+        details = {'sample':name, 'original_contigset':job['input']['reference'], 'original_file':job['input']['vcf']}
         setTableDetails(table, details)
+        table.add_types(["SimpleVar", "gri"])
         table.rename(name+".vcf")
         print table.get_details()
         simpleVarArray.append(table)

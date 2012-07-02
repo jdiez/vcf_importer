@@ -106,7 +106,7 @@ def main():
         print "SimpleVar table" + json.dumps({'table_id':x.get_id()})
         result.append(dxpy.dxlink(x.get_id()))
 
-    job['output']['simplevar'] = result
+    job['output']['variants'] = result
 
 def setTableDetails(table, details):
     tableId = table.get_id()

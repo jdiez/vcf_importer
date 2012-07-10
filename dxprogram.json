@@ -6,7 +6,7 @@
   "categories": ["Importers"],
   "dxapi": "1.03rc",
   "version": "0.0.1",
-  "inputs": [
+  "inputSpec": [
     {"name": "vcf", "class": "file"},
     {"name": "reference", "class": "record", "type": "ContigSet"},
     {"name": "output name", "class":"string", "optional":true},
@@ -15,8 +15,8 @@
     {"name": "store_full_vcf", "class": "boolean", "default": true},
     {"name": "store_samples_individually", "class":"boolean", "default":false}
   ],
-  "outputs": [
+  "outputSpec": [
     {"name": "variants", "class": "array:gtable", "type": {"$and": ["SimpleVar", "gri"]}}
   ],
-  "run": {"file": "parseVcf.py", "interpreter": "python2.7"}
+  "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"}
 }

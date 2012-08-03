@@ -32,7 +32,7 @@ class TestMyApp(unittest.TestCase):
     def setUpClass(cls):
         cls.base_input = makeInputs()
         bundled_resources = dxpy.app_builder.upload_resources(src_dir)
-        cls.program_id = dxpy.app_builder.upload_program(src_dir, bundled_resources, overwrite=True)
+        cls.program_id = dxpy.app_builder.upload_applet(src_dir, bundled_resources, overwrite=True)
     
     def setUp(self):
         pass

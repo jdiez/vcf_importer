@@ -3,7 +3,6 @@
   "title": "Import VCF",
   "summary": "Converts .vcf file to a DNAnexus table",
   "description": "Converts .vcf file to a DNAnexus table for subsequent processing and visualization in the DNAnexus platform",
-  "categories": ["Importers"],
   "dxapi": "1.03rc",
   "inputSpec": [
     {"name": "vcf", "class": "file"},
@@ -17,9 +16,7 @@
   "outputSpec": [
     {"name": "variants", "class": "array:gtable", "type": {"$and": ["SimpleVar", "gri"]}}
   ],
-  "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7_old"}
-,
-
+  "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7_old"},
     "resources": [],
     "version": "0.0.8",
     "categories": [

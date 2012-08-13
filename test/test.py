@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os, sys, unittest, json, subprocess
 
-import dxpy, dxpy.program_builder
+import dxpy, dxpy.app_builder
 from dxpy.exceptions import *
 
 src_dir = os.path.join(os.path.dirname(__file__), "..")
@@ -11,7 +11,7 @@ test_resources_dir = os.path.join(src_dir, "test", "resources")
 
 def makeInputs():
     try:
-        contigset_importer = dxpy.DXProgram(dxpy.find_data_objects(classname="program", properties={"name": "fasta_contigset_importer"}).next()['id'])
+        contigset_importer = dxpy.DXApplet(dxpy.find_data_objects(classname="applet", properties={"name": "fasta_contigset_importer"}).next()['id'])
     except StopIteration:
         raise Exception("fasta_contigset_importer not found, please upload them")
     
@@ -31,8 +31,8 @@ class TestMyApp(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.base_input = makeInputs()
-        bundled_resources = dxpy.program_builder.upload_resources(src_dir)
-        cls.program_id = dxpy.program_builder.upload_program(src_dir, bundled_resources, overwrite=True)
+        bundled_resources = dxpy.app_builder.upload_resources(src_dir)
+        cls.program_id = dxpy.app_builder.upload_applet(src_dir, bundled_resources, overwrite=True)
     
     def setUp(self):
         pass
@@ -42,7 +42,7 @@ class TestMyApp(unittest.TestCase):
 
     def test_default_vcf(self):
         
-        job = dxpy.DXProgram(self.program_id).run(self.base_input)        
+        job = dxpy.DXApplet(self.program_id).run(self.base_input)        
         print "Waiting for job to complete"
         job.wait_on_done()
         print json.dumps(job.describe()["output"])

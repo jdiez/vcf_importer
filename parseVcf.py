@@ -15,104 +15,153 @@ import magic
 logging.basicConfig(level=logging.DEBUG)
 
 
-
-def main():
+@dxpy.entry_point('main')
+def main(**job_inputs):
 
     print "Running VCF to SimpleVar"
-    print job['input']['vcf']
+    print job_inputs['vcf']
+    job_outputs = {}
     header = ''
 
-    inputFile = dxpy.download_dxfile(job['input']['vcf'], 'output.vcf')
+    inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.vcf')
     
-    header = extractHeader('output.vcf').strip()
+    headerInfo = extractHeader('output.vcf')
     
     variants_schema = [
       {"name": "chr", "type": "string"}, 
       {"name": "lo", "type": "int32"},
       {"name": "hi", "type": "int32"},
-      {"name": "type", "type": "string"},
       {"name": "ref", "type": "string"},
       {"name": "alt", "type": "string"},
-      {"name": "qual", "type": "int32"},
-      {"name": "coverage", "type": "string"},
-      {"name": "total_coverage", "type": "int32"},
-      {"name": "genotype_quality", "type": "int32"}
+      {"name": "qual", "type": "float"},
+      {"name": "filter", "type": "string"},
+      {"name": "ids", "type": "string"}
          ]
     
-    #if re.search("ID=AF,Number=A,Type=Float", header) != None:
-    #    print "Affirmative"
-    #    variants_schema.append({"name": "coverage", "type": "string"})
-    #print "Negative"
-    #variants_schema.extend([{"name": "total_coverage", "type": "int32"}, {"name": "genotype_quality", "type": "int32"} ])
+    description = {}
+    samples = []
+
+    print headerInfo
+    print headerInfo['tags']['format']
+
+    elevatedTags = ['format_GT', 'format_DP', 'format_AD']
+    indices = [dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')]
     
-    if 'output name' in job['input']:
-        name =  job['input']['output name']
+    
+    formats = {}
+    infos = {}
+    filters = {}
+    
+    for k, v in headerInfo['tags']['info'].iteritems():
+        variants_schema.append({"name": "info_"+k, "type":translateTagTypeToColumnType(v)})
+        description[k] = {'name' : k, 'description' : v['description'], 'type' : v['type'], 'number' : v['number']}
+    
+    numSamples = len(headerInfo['columns'].strip().split("\t"))
+    #For each sample, write the sample-specific columns
+    for i in range(len(headerInfo['columns'].strip().split("\t")[9:])):
+      #This prevents name collision in columns
+      variants_schema.extend([
+        {"name": "genotype_"+str(i), "type": "string"},
+        {"name": "phasing_"+str(i), "type": "string"},
+        {"name": "type_"+str(i), "type": "string"},
+        {"name": "variation_qual_"+str(i), "type": "float"},
+        {"name": "genotype_qual_"+str(i), "type": "float"},
+        {"name": "coverage_"+str(i), "type": "string"},
+        {"name": "total_coverage_"+str(i), "type": "int32"}
+      ])
+      indices.append(dxpy.DXGTable.lexicographic_index([["type_"+str(i), "ASC"]], 'type_'+str(i)))
+      samples.append(headerInfo['columns'].strip().split("\t")[9:][i])
+      for k, v in headerInfo['tags']['format'].iteritems():
+        if "format_"+k not in elevatedTags:
+          variants_schema.append({"name": "format_"+k+"_"+str(i), "type":translateTagTypeToColumnType(v)})
+        
+    #for x in variants_schema:
+    #  print x['name']
+    
+    if 'output name' in job_inputs:
+        name =  job_inputs['output name']
     else:
-        fileName = dxpy.DXFile(job['input']['vcf']['$dnanexus_link']).describe()['name']
+        fileName = dxpy.DXFile(job_inputs['vcf']['$dnanexus_link']).describe()['name']
         name = fileName.split(".")[0]
         for x in fileName.split(".")[1:-1]:
             name += "."+x
     
-    simpleVarArray = []
-    if job['input']['store_full_vcf']:
-        variants_schema.extend([{"name": "vcf_alt", "type": "string"}, {"name": "vcf_additional_data", "type": "string"}])
-
-    if job['input']['store_samples_individually']:        
-        tabSplit = header.strip().split("\t")
-        print tabSplit
-        for x in tabSplit[9:]:
-            table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
-            details = {'sample':x, 'original_contigset':job['input']['reference'], 'original_file':job['input']['vcf']}
-            table.set_details(details)
-            table.add_types(["SimpleVar", "gri"])
-            table.rename(name + "sample " + x)
-            print table.get_details()
-            simpleVarArray.append(table)        
-    else:
-        table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')])
-        details = {'sample':name, 'original_contigset':job['input']['reference'], 'original_file':job['input']['vcf']}
-        setTableDetails(table, details)
-        table.add_types(["SimpleVar", "gri"])
-        table.rename(name+".vcf")
-        print table.get_details()
-        simpleVarArray.append(table)
-        
-        
+    print variants_schema
     
-    command = "dx_vcfToSimplevar2"
-    for x in simpleVarArray:
-        command += " --table_id " + str(x.get_id())
-    command += " --vcf_file output.vcf"
-    if job['input']['compress_reference']:
-        command += " --compress_reference"
-    if job['input']['infer_no_call']:
-        command += " --infer_no_call"
-    if job['input']['store_full_vcf']:
-        command += " --store_full_vcf"
-    command += " --extract_header"
-    if job['input']['store_samples_individually']:
-        command += " --store_samples_individually"
+    details = {'samples':samples, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'formats':headerInfo['tags']['format'], 'infos':headerInfo['tags']['info']}
+    if headerInfo.get('filters') != {}:
+      details['filters'] = headerInfo['filters']
+      
+    table = dxpy.new_dxgtable(variants_schema, indices=indices)
+    table.set_details(details)
+    table.add_types(["SimpleVar", "gri"])
+    table.rename(name)
+    
+    ##Pass Simplevar to new table
+    
 
+    #
+    #simpleVarArray = []
+    #if job_inputs['store_samples_individually']:        
+    #    tabSplit = headerInfo['columns'].strip().split("\t")
+    #    print tabSplit
+    #    for x in tabSplit[9:]:
+    #        table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri'), dxpy.DXGTable.lexicographic_index(["type", "ASC"], 'type')])
+    #        details = {'sample':x, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'tag_descriptions':description}
+    #        table.set_details(details)
+    #        table.add_types(["SimpleVar", "gri"])
+    #        table.rename(name + "sample " + x)
+    #        print table.get_details()
+    #        simpleVarArray.append(table)        
+    #else:
+    #    table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri'), dxpy.DXGTable.lexicographic_index([["type", "ASC"]], 'type')])
+    #    details = {'sample':name, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'tag_descriptions':description}
+    #    setTableDetails(table, details)
+    #    table.add_types(["SimpleVar", "gri"])
+    #    table.rename(name)
+    #    print table.get_details()
+    #    simpleVarArray.append(table)
+    #    
+    #    
+    #
+    command = "dx_vcfToSimplevar2"
+    command += " --table_id " + str(table.get_id())
+    command += " --vcf_file output.vcf"
+    if job_inputs['compress_reference']:
+        command += " --compress_reference"
+    if job_inputs['infer_no_call']:
+        command += " --infer_no_call"
+    if job_inputs['compress_no_call']:
+      command += " --compress_no_call"
+    command += " --extract_header"
+    if job_inputs['store_samples_individually']:
+        command += " --store_samples_individually"
+    #
     print command
     subprocess.check_call(command, shell=True)
+    #
+    #for simpleVar in simpleVarArray:
+    #    simpleVar.close()
     
-    for simpleVar in simpleVarArray:
-        simpleVar.close()
-    
-    completed = False
-    while completed == False:
-        completed = True
-        for x in simpleVarArray:
-            print x.describe()['state']
-            if x.describe()['state'] != 'closed':
-                completed = False
-            time.sleep(2)
     result = []
-    for x in simpleVarArray:    
-        print "SimpleVar table" + json.dumps({'table_id':x.get_id()})
-        result.append(dxpy.dxlink(x.get_id()))
+    table.close()
+    result.append(dxpy.dxlink(table.get_id()))
+    
+    #completed = False
+    #while completed == False:
+    #    completed = True
+    #    for x in simpleVarArray:
+    #        print x.describe()['state']
+    #        if x.describe()['state'] != 'closed':
+    #            completed = False
+    #        time.sleep(2)
+    #result = []
+    #for x in simpleVarArray:    
+    #    print "SimpleVar table" + json.dumps({'table_id':x.get_id()})
+    #    result.append(dxpy.dxlink(x.get_id()))
 
-    job['output']['variants'] = result
+    job_outputs['variants'] = result
+    return job_outputs
 
 def setTableDetails(table, details):
     tableId = table.get_id()
@@ -121,14 +170,30 @@ def setTableDetails(table, details):
     
 
 def extractHeader(vcfFileName):
-    header = ''
-    with unpack_and_open(vcfFileName) as vcfFile:
-        while 1:
-            line = vcfFile.next()
-            if line == '':
-                break
-            if line[1] != "#":
-                return line
+  result = {'columns': '', 'tags' : {'format' : {}, 'info' : {} }, 'filters' : {}}
+  with unpack_and_open(vcfFileName) as vcfFile:
+    while 1:
+      line = vcfFile.next().strip()
+      tag = re.findall("ID=(\w+),", line)
+      if len(tag) > 0:
+        tagType = ''
+        if line.count("##FORMAT") > 0:
+          tagType = 'format'
+        elif line.count("##INFO") > 0:
+          tagType = 'info'
+        elif line.count("##FILTER") > 0:
+          result['filters'][re.findall("ID=(\w+),")[0]] = re.findall('Description="(.*)"')[0]
+
+        typ = re.findall("Type=(\w+),", line)
+        if tagType != '':
+          number = re.findall("Number=(\d+)", line)
+          description = re.findall('Description="(.*)"', line)
+          result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number, 'description' : description }
+      if line[0] == "#" and line[1] != "#":
+        result['columns'] = line.strip()
+      if line == '' or line[0] != "#":
+          break
+  return result
             
 def unpack_and_open(input):
     m = magic.Magic()
@@ -143,12 +208,13 @@ def unpack_and_open(input):
 
     # if uncompressed open the file and return a handle to it
     try:
-        if file_type == 'ASCII text' or file_type == 'ASCII English text, with very long lines':
+        if 'ASCII' in file_type:
             return open(input)
     except:
         raise dxpy.ProgramError("Detected uncompressed input but unable to open file. File may be corrupted.")
 
     # if we find a tar file throw a program error telling the user to unpack it
+    print file_type
     if file_type == 'application/x-tar':
         raise dxpy.ProgramError("Program does not support tar files.  Please unpack.")
 
@@ -183,6 +249,18 @@ def unpack_and_open(input):
         return subprocess.Popen([uncomp_util, input], stdout=subprocess.PIPE).stdout
     except:
         raise dxpy.ProgramError("Unable to open compressed input for reading")
-            
 
+def translateTagTypeToColumnType(tag):
+  if tag['type'] == "Flag":
+    return "boolean"
+  if tag['number'] != '1':
+    return 'string'
+  if tag['type'] == "Integer":
+    return 'int32'
+  if tag['type'] == "Float":
+    return "float"
+  return "string"
+
+
+dxpy.run()
             

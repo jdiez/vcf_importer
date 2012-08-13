@@ -1,7 +1,23 @@
 {
-    "resources": [],
-    "version": "0.0.8",
-    "categories": [
-        "Importers"
-    ]
+  "name": "vcf_to_simplevar",
+  "title": "Import VCF",
+  "summary": "Converts .vcf file to a DNAnexus table",
+  "description": "Converts .vcf file to a DNAnexus table for subsequent processing and visualization in the DNAnexus platform",
+  "dxapi": "1.03rc",
+  "inputSpec": [
+    {"name": "vcf", "class": "file"},
+    {"name": "reference", "class": "record", "type": "ContigSet"},
+    {"name": "output name", "class":"string", "optional":true},
+    {"name": "compress_reference", "class": "boolean", "default": true},
+    {"name": "compress_no_call", "class": "boolean", "default": true},
+    {"name": "infer_no_call", "class": "boolean", "default": true},
+    {"name": "store_samples_individually", "class":"boolean", "default":false}
+  ],
+  "outputSpec": [
+    {"name": "variants", "class": "array:gtable", "type": {"$and": ["SimpleVar", "gri"]}}
+  ],
+  "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
+  "resources": [],
+  "version": "0.0.12",
+  "categories": ["Importers"]
 }

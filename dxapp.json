@@ -6,18 +6,17 @@
   "dxapi": "1.03rc",
   "inputSpec": [
     {"name": "vcf", "class": "file"},
-    {"name": "reference", "class": "record", "type": "ContigSet"},
-    {"name": "output name", "class":"string", "optional":true},
-    {"name": "compress_reference", "class": "boolean", "default": true},
-    {"name": "compress_no_call", "class": "boolean", "default": true},
-    {"name": "infer_no_call", "class": "boolean", "default": true},
-    {"name": "store_samples_individually", "class":"boolean", "default":false}
+    {"name": "reference", "class": "record", "type": "ContigSet", "label": "Reference Genome", "help": "The reference genome to call variants against"},
+    {"name": "output name", "class":"string", "optional":true, "label": "Output Name", "help": "The name of the generated variants object"},
+    {"name": "compress_reference", "class": "boolean", "default": false, "label": "Compress Reference", "help": "If selected, contiguous reference calls in the genome will be condensed to one row. This often saves significant space"},
+    {"name": "compress_no_call", "class": "boolean", "default": false, "label": "Compress No-call", "help": "If selected, contiguous no-calls in the genome will be condensed to one row. This often saves significant space"}, 
+    {"name": "infer_no_call", "class": "boolean", "default": false, "label": "Infer No-call", "help": "If selected, regions of the genome lacking data in the VCF file will be labelled as \"No-call\""}
   ],
   "outputSpec": [
     {"name": "variants", "class": "array:gtable", "type": {"$and": ["Variants", "gri"]}}
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],
-  "version": "0.0.13",
+  "version": "0.0.14",
   "categories": ["Importers"]
 }

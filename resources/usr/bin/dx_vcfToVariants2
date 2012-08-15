@@ -324,7 +324,7 @@ def findCoveragePerAllele(line):
         result += str(int(float(coverage)*float(fraction)))
     return result
 
-def writeRow(simpleVar, line, compressReference, compressNocall, refBuffer):
+def writeRow(simpleVar, line, compressReference, compressNoCall, refBuffer):
 
     chr = line['chr']
     lo = line['lo']

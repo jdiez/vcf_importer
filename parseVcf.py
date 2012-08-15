@@ -106,8 +106,6 @@ def main(**job_inputs):
         command += " --infer_no_call"
     if job_inputs['compress_no_call']:
       command += " --compress_no_call"
-    if job_inputs['store_samples_individually']:
-        command += " --store_samples_individually"
     
     print command
     subprocess.check_call(command, shell=True)

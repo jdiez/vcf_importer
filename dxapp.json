@@ -1,5 +1,5 @@
 {
-  "name": "vcf_to_simplevar",
+  "name": "vcf_to_variants",
   "title": "Import VCF",
   "summary": "Converts .vcf file to a DNAnexus table",
   "description": "Converts .vcf file to a DNAnexus table for subsequent processing and visualization in the DNAnexus platform",
@@ -17,6 +17,6 @@
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],
-  "version": "0.0.14",
+  "version": "0.0.15",
   "categories": ["Importers"]
 }

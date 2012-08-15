@@ -47,6 +47,7 @@ def main():
     compressNoCall = opts.compress_no_call
     compressReference = opts.compress_reference
     
+    global tags
     tags = simpleVar.describe()['columns']
     
     global tagDefaults
@@ -68,7 +69,7 @@ def main():
             if x['type'] == 'boolean':
                 tagDefaults[x['name']] = False
             if x['type'] == 'float':
-                tagDefaults[x['name']] = missingDefault
+                tagDefaults[x['name']] = float(missingDefault)
             if x['name'].count("format") > 0:
                 if x['name'] not in tagOrder['format']:
                     tagOrder['format'].append(x['name'])

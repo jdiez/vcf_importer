@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG)
 @dxpy.entry_point('main')
 def main(**job_inputs):
 
-    print "Running VCF to SimpleVar"
+    print "Running VCF to Variants"
     print job_inputs['vcf']
     job_outputs = {}
     header = ''
@@ -94,37 +94,10 @@ def main(**job_inputs):
       
     table = dxpy.new_dxgtable(variants_schema, indices=indices)
     table.set_details(details)
-    table.add_types(["SimpleVar", "gri"])
+    table.add_types(["Variants", "gri"])
     table.rename(name)
-    
-    ##Pass Simplevar to new table
-    
 
-    #
-    #simpleVarArray = []
-    #if job_inputs['store_samples_individually']:        
-    #    tabSplit = headerInfo['columns'].strip().split("\t")
-    #    print tabSplit
-    #    for x in tabSplit[9:]:
-    #        table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri'), dxpy.DXGTable.lexicographic_index(["type", "ASC"], 'type')])
-    #        details = {'sample':x, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'tag_descriptions':description}
-    #        table.set_details(details)
-    #        table.add_types(["SimpleVar", "gri"])
-    #        table.rename(name + "sample " + x)
-    #        print table.get_details()
-    #        simpleVarArray.append(table)        
-    #else:
-    #    table = dxpy.new_dxgtable(variants_schema, indices=[dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri'), dxpy.DXGTable.lexicographic_index([["type", "ASC"]], 'type')])
-    #    details = {'sample':name, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'tag_descriptions':description}
-    #    setTableDetails(table, details)
-    #    table.add_types(["SimpleVar", "gri"])
-    #    table.rename(name)
-    #    print table.get_details()
-    #    simpleVarArray.append(table)
-    #    
-    #    
-    #
-    command = "dx_vcfToSimplevar2"
+    command = "dx_vcfToVariants2"
     command += " --table_id " + str(table.get_id())
     command += " --vcf_file output.vcf"
     if job_inputs['compress_reference']:
@@ -133,40 +106,25 @@ def main(**job_inputs):
         command += " --infer_no_call"
     if job_inputs['compress_no_call']:
       command += " --compress_no_call"
-    command += " --extract_header"
     if job_inputs['store_samples_individually']:
         command += " --store_samples_individually"
-    #
+    
     print command
     subprocess.check_call(command, shell=True)
-    #
-    #for simpleVar in simpleVarArray:
-    #    simpleVar.close()
     
     result = []
     table.close()
     result.append(dxpy.dxlink(table.get_id()))
     
-    #completed = False
-    #while completed == False:
-    #    completed = True
-    #    for x in simpleVarArray:
-    #        print x.describe()['state']
-    #        if x.describe()['state'] != 'closed':
-    #            completed = False
-    #        time.sleep(2)
-    #result = []
-    #for x in simpleVarArray:    
-    #    print "SimpleVar table" + json.dumps({'table_id':x.get_id()})
-    #    result.append(dxpy.dxlink(x.get_id()))
+
 
     job_outputs['variants'] = result
     return job_outputs
 
 def setTableDetails(table, details):
     tableId = table.get_id()
-    simpleVar = dxpy.open_dxgtable(tableId)
-    simpleVar.set_details(details)
+    table = dxpy.open_dxgtable(tableId)
+    table.set_details(details)
     
 
 def extractHeader(vcfFileName):
@@ -186,9 +144,13 @@ def extractHeader(vcfFileName):
 
         typ = re.findall("Type=(\w+),", line)
         if tagType != '':
-          number = re.findall("Number=(\d+)", line)
+          number = re.findall("Number=(\w+)", line)
           description = re.findall('Description="(.*)"', line)
-          result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number, 'description' : description }
+          if len(number) == 0:
+            number = ['.']
+          if len(description) == 0:
+            description = ['']
+          result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
       if line[0] == "#" and line[1] != "#":
         result['columns'] = line.strip()
       if line == '' or line[0] != "#":

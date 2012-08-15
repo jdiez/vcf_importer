@@ -14,10 +14,10 @@
     {"name": "store_samples_individually", "class":"boolean", "default":false}
   ],
   "outputSpec": [
-    {"name": "variants", "class": "array:gtable", "type": {"$and": ["SimpleVar", "gri"]}}
+    {"name": "variants", "class": "array:gtable", "type": {"$and": ["Variants", "gri"]}}
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],
-  "version": "0.0.12",
+  "version": "0.0.13",
   "categories": ["Importers"]
 }

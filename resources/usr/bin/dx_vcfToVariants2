@@ -135,6 +135,7 @@ def main():
                 print "Processed count %i variants " % count
             count += 1
             if input[0] != "#":
+                vcfLine = parseVcfLine(input)
                 regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
                 if regionIndex > -1:         
                     if lastRegion[0] != vcfLine['chr'] or lastRegion[1] != regionIndex:

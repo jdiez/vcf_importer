@@ -75,8 +75,6 @@ def main():
             else:
                 tagOrder['info'].append(x['name'])
 
-    print tagOrder
-
     priorType = "None"
     priorPosition = -1
 
@@ -96,10 +94,8 @@ def main():
 
     regions = {}
     contigDetails = dxpy.DXRecord(originalContig).get_details()['contigs']
-    print contigDetails
     contigNames = contigDetails['names']
     contigSizes = contigDetails['sizes']
-    print regions
     
     if opts.region_file != "":
         regionText = open(opts.region_file, 'r').read()
@@ -434,23 +430,16 @@ def writeRow(simpleVar, line, compressReference, compressNoCall, refBuffer):
     if allNoCall:
         entry[3] = ''
         if compressNoCall == False:
-            #print "no call"
-            #print entry
             simpleVar.add_rows([[entry][:]])
         return "write ref buffer"
     elif allRef:
         entry[3] = ''
         if compressReference:
-            #print "ref"
-            #print entry
             refBuffer.append(entry[:])
             return "no action"
         else:
-            #print entry
             simpleVar.add_rows([entry[:]])
     else:
-        #print "variant"
-        print entry
         simpleVar.add_rows([entry[:]])
         return "write ref buffer"
         
@@ -480,7 +469,6 @@ def writeCompressedRow(simpleVar, chr, lo, hi, typ):
             entry.extend(['./.', './.'])
         entry.extend([typ, missingDefault, missingDefault, '', missingDefault ])
         entry.extend(appendTags(tagOrder['format'], {}))
-    print entry
     simpleVar.add_rows([entry][:])
 
 def writeNoCallRow(simpleVar, chr, lo, hi, tagOrder, tagDefaults):

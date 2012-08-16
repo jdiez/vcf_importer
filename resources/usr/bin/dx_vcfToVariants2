@@ -187,7 +187,6 @@ def writeReferenceRow(variantsTable, vcfLine, compressReference, refBuffer, tagO
      
 
 def parseVcfLine(input):
-    print input
     tabSplit = input.strip().split("\t")
     chr = tabSplit[0]
     lo = int(tabSplit[1])-1

@@ -136,7 +136,7 @@ def extractHeader(vcfFileName):
         elif line.count("##INFO") > 0:
           tagType = 'info'
         elif line.count("##FILTER") > 0:
-          result['filters'][re.findall("ID=(\w+),")[0]] = re.findall('Description="(.*)"')[0]
+          result['filters'][re.findall("ID=(\w+),", line)[0]] = re.findall('Description="(.*)"', line)[0]
 
         typ = re.findall("Type=(\w+),", line)
         if tagType != '':

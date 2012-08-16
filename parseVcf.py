@@ -114,8 +114,6 @@ def main(**job_inputs):
     table.close()
     result.append(dxpy.dxlink(table.get_id()))
     
-
-
     job_outputs['variants'] = result
     return job_outputs
 

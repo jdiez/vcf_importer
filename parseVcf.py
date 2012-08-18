@@ -17,13 +17,15 @@ logging.basicConfig(level=logging.DEBUG)
 
 @dxpy.entry_point('main')
 def main(**job_inputs):
-
+  
     print "Running VCF to Variants"
     print job_inputs['vcf']
     job_outputs = {}
     header = ''
-
-    inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.vcf')
+    
+    inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.file')
+    
+    decompressFile('output.file')
     
     headerInfo = extractHeader('output.vcf')
     
@@ -125,33 +127,55 @@ def setTableDetails(table, details):
 
 def extractHeader(vcfFileName):
   result = {'columns': '', 'tags' : {'format' : {}, 'info' : {} }, 'filters' : {}}
-  with unpack_and_open(vcfFileName) as vcfFile:
-    while 1:
-      line = vcfFile.next().strip()
-      tag = re.findall("ID=(\w+),", line)
-      if len(tag) > 0:
-        tagType = ''
-        if line.count("##FORMAT") > 0:
-          tagType = 'format'
-        elif line.count("##INFO") > 0:
-          tagType = 'info'
-        elif line.count("##FILTER") > 0:
-          result['filters'][re.findall("ID=(\w+),", line)[0]] = re.findall('Description="(.*)"', line)[0]
+  vcfFile = open(vcfFileName, 'r')
+  while 1:
+    line = vcfFile.next().strip()
+    tag = re.findall("ID=(\w+),", line)
+    if len(tag) > 0:
+      tagType = ''
+      if line.count("##FORMAT") > 0:
+        tagType = 'format'
+      elif line.count("##INFO") > 0:
+        tagType = 'info'
+      elif line.count("##FILTER") > 0:
+        result['filters'][re.findall("ID=(\w+),", line)[0]] = re.findall('Description="(.*)"', line)[0]
 
-        typ = re.findall("Type=(\w+),", line)
-        if tagType != '':
-          number = re.findall("Number=(\w+)", line)
-          description = re.findall('Description="(.*)"', line)
-          if len(number) == 0:
-            number = ['.']
-          if len(description) == 0:
-            description = ['']
-          result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
-      if line[0] == "#" and line[1] != "#":
-        result['columns'] = line.strip()
-      if line == '' or line[0] != "#":
-          break
+      typ = re.findall("Type=(\w+),", line)
+      if tagType != '':
+        number = re.findall("Number=(\w+)", line)
+        description = re.findall('Description="(.*)"', line)
+        if len(number) == 0:
+          number = ['.']
+        if len(description) == 0:
+          description = ['']
+        result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
+    if line[0] == "#" and line[1] != "#":
+      result['columns'] = line.strip()        
+    if line == '' or line[0] != "#":
+        break
   return result
+
+
+def checkUncompressedFile(input):
+    m = magic.Magic()
+
+    # determine compression format
+    try:
+        file_type = m.from_file(input)
+    except:
+        raise dxpy.ProgramError("Unable to identify compression format")
+
+    print file_type
+
+    # if uncompressed open the file and return a handle to it
+    try:
+        if 'ASCII' in file_type:
+            return True
+        else:
+          return False
+    except:
+        raise dxpy.ProgramError("Detected uncompressed input but unable to open file. File may be corrupted.")
+  
             
 def unpack_and_open(input):
     m = magic.Magic()
@@ -207,6 +231,39 @@ def unpack_and_open(input):
         return subprocess.Popen([uncomp_util, input], stdout=subprocess.PIPE).stdout
     except:
         raise dxpy.ProgramError("Unable to open compressed input for reading")
+
+def decompressFile(inputFile):
+    m = magic.Magic()
+    # determine compression format
+    try:
+        file_type = m.from_file(inputFile)
+    except:
+        raise dxpy.ProgramError("Unable to identify compression format")
+
+    print file_type
+    # if uncompressed open the file and return a handle to it
+    if 'ASCII' in file_type:
+        subprocess.call("mv output.file output.vcf", shell=True)
+    else:
+      # if we find a tar file throw a program error telling the user to unpack it
+      print file_type
+      if file_type == 'application/x-tar':
+          raise dxpy.ProgramError("Program does not support tar files.  Please unpack.")  
+      uncomp_util = None
+      if file_type == 'XZ compressed data':
+          subprocess.call("mv output.file output.vcf.xz", shell=True)
+          subprocess.call('xz -d output.xz', shell=True)
+      elif file_type[:21] == 'bzip2 compressed data':
+          subprocess.call("mv output.file output.vcf.bz2", shell=True)
+          subprocess.call('bzip2 -d output.vcf.bz2', shell=True)
+      elif file_type[:20] == 'gzip compressed data':
+          subprocess.call('mv output.file output.vcf.gz', shell=True)
+          subprocess.call('gzip -d output.vcf.gz', shell=True)
+      elif file_type == 'POSIX tar archive (GNU)' or 'tar' in file_type:
+          raise dxpy.ProgramError("Found a tar archive.  Please untar your sequences before importing")
+      else:
+          raise dxpy.ProgramError("Unsupported compression type.  Supported formats are xz, gzip, bzip, and uncompressed")
+
 
 def translateTagTypeToColumnType(tag):
   if tag['type'] == "Flag":

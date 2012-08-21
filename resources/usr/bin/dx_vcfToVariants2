@@ -398,8 +398,14 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             for j in range(len(phredProbabilities)):
                 if j != genotypePosition:
                     sampleGenotypeQuality += 10.0**(-float(phredProbabilities[j])/10.0)
-            sampleVariantQuality = float(phredProbabilities[0])
-            sampleGenotypeQuality = -10.0*float(math.log10(sampleGenotypeQuality))
+            try:
+                sampleVariantQuality = float(phredProbabilities[0])
+            except:
+                sampleVariantQuality = float(missingDefault)
+            try:
+                sampleGenotypeQuality = -10.0*float(math.log10(sampleGenotypeQuality))
+            except:
+                sampleGenotypeQuality = float(missingDefault)
 
         typeList = []
         type = 'no-call'

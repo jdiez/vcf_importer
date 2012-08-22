@@ -71,7 +71,7 @@ def main(**job_inputs):
         {"name": "coverage_"+str(i), "type": "string"},
         {"name": "total_coverage_"+str(i), "type": "int32"}
       ])
-      indices.append(dxpy.DXGTable.lexicographic_index([["type_"+str(i), "ASC"]], 'type_'+str(i)))
+      #indices.append(dxpy.DXGTable.lexicographic_index([["type_"+str(i), "ASC"]], 'type_'+str(i)))
       samples.append(headerInfo['columns'].strip().split("\t")[9:][i])
       for k, v in headerInfo['tags']['format'].iteritems():
         if "format_"+k not in elevatedTags:

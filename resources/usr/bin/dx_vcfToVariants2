@@ -10,6 +10,7 @@ import sys
 import subprocess
 import time
 import logging
+import codecs
 
 sys.path.append('/usr/local/lib/')
 logging.basicConfig(level=logging.DEBUG)
@@ -29,6 +30,7 @@ def main():
     parser.add_option("--compress_no_call", dest="compress_no_call", action="store_true", default = False, help="All contiguous blocks of no-call will be compressed to a single row")
     parser.add_option("--compress_reference", dest="compress_reference", action="store_true", default = False, help="All contiguous blocks of reference will be compressed to a single row")
     parser.add_option("--region_file", dest="region_file", default="", help="Regions to process for variants in the format Chr:lo-hi")
+    parser.add_option("--encoding", dest="encoding", default="utf8", help="Encoding of the imported file")
 
     (opts, args) = parser.parse_args()
     
@@ -47,6 +49,7 @@ def main():
     inferNoCall = opts.infer_no_call
     compressNoCall = opts.compress_no_call
     compressReference = opts.compress_reference
+    encoding = opts.encoding
     
     global tags
     tags = variantsTable.describe()['columns']
@@ -129,12 +132,20 @@ def main():
     lastRegion = ['', -1]
         
     header = ''
-    vcfFile = open(vcfFileName, 'r')
+    vcfFile = codecs.open(vcfFileName, 'r', encoding=encoding)
+            
     #with unpack_and_open(vcfFileName) as vcfFile:
     #for input in open(vcfFileName, 'r'):
     while 1:
         try:
-            input = vcfFile.next()
+            if encoding != "utf8":
+                try:
+                    rawInput = unicode(vcfFile.next())
+                    input = rawInput.encode('utf8', 'replace')
+                except UnicodeDecodeError:
+                    raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
+            else:
+                input = vcfFile.next()
             if count%100000 == 0:
                 print "Processed count %i variants " % count
             count += 1
@@ -159,7 +170,6 @@ def main():
                     priors['position'] = vcfLine['hi']
                 else:
                     writeReferenceBuffer(variantsTable, refBuffer)
-
         except StopIteration:
             break
     writeReferenceBuffer(variantsTable, refBuffer)
@@ -206,13 +216,18 @@ def parseVcfLine(input):
     filt = tabSplit[6]
     if filt == '.':
         filt = ''
-    overlap = checkOverlap(ref, altOptions)
-    lo += overlap
-    
     if altOptions == ['']:
         ref = ''
     overlap = checkOverlap(ref, altOptions)
+
+    #print "here"
+    #print ref
+    #print altOptions
+    #print overlap
+
+    lo += overlap
     ref = ref[overlap:]
+    
     for i in range(len(altOptions)):
         altOptions[i] = altOptions[i][overlap:]
     
@@ -255,13 +270,25 @@ def extractFormatTags(formatColumns, formatData):
     return result
 
 def checkOverlap(ref, altOptions):
-    overlap = 0
+    minOverlap = 0
+    first = True
     for x in altOptions:
-        if len(x) > 0 and len(ref) > 0:
-            if x[0] != ref[0]:
-                return 0
-    return 0
-
+        overlap = 0
+        for i in range(len(x)):
+            try:
+                if ref[i] == x[i]:
+                   overlap += 1
+                else:
+                    break
+            except IndexError:
+                break
+        if first:
+            minOverlap = overlap
+            first = False
+        if overlap < minOverlap:
+            minOverlap = overlap
+    return minOverlap
+    
 def isSubSequence(longer, shorter):
     if len(shorter) == 0:
         return True
@@ -419,7 +446,7 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
         if len(typeList) == 1:
             type = typeList[0]
         elif len(typeList) > 1:
-            type = mixed
+            type = 'mixed'
             
         if type != 'ref':
             allRef = False
@@ -432,20 +459,20 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
     if allNoCall:
         entry[3] = ''
         if compressNoCall == False:
-            checkEntry(entry, typeCheck)
+            #checkEntry(entry, typeCheck)
             variantsTable.add_rows([[entry][:]])
         return "write ref buffer"
     elif allRef:
         entry[3] = ''
         if compressReference:
-            checkEntry(entry, typeCheck)
+            #checkEntry(entry, typeCheck)
             refBuffer.append(entry[:])
             return "no action"
         else:
-            checkEntry(entry, typeCheck)
+            #checkEntry(entry, typeCheck)
             variantsTable.add_rows([entry[:]])
     else:
-        checkEntry(entry, typeCheck)
+        #checkEntry(entry, typeCheck)
         variantsTable.add_rows([entry[:]])
         return "write ref buffer"
         

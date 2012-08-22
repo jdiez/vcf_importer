@@ -86,7 +86,9 @@ def main(**job_inputs):
         fileName = dxpy.DXFile(job_inputs['vcf']['$dnanexus_link']).describe()['name']
         name = fileName.split(".")[0]
         for x in fileName.split(".")[1:-1]:
-            name += "."+x
+            name += "."+x      
+    
+      
     
     print variants_schema
     
@@ -108,6 +110,10 @@ def main(**job_inputs):
         command += " --infer_no_call"
     if job_inputs['compress_no_call']:
       command += " --compress_no_call"
+    
+    if 'file_encoding' in job_inputs:
+      command += " --encoding " + job_inputs['file_encoding']
+    
     
     print command
     subprocess.check_call(command, shell=True)

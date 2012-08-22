@@ -10,13 +10,14 @@
     {"name": "output name", "class":"string", "optional":true, "label": "Output Name", "help": "The name of the generated variants object"},
     {"name": "compress_reference", "class": "boolean", "default": false, "label": "Compress Reference", "help": "If selected, contiguous reference calls in the genome will be condensed to one row. This often saves significant space"},
     {"name": "compress_no_call", "class": "boolean", "default": false, "label": "Compress No-call", "help": "If selected, contiguous no-calls in the genome will be condensed to one row. This often saves significant space"}, 
-    {"name": "infer_no_call", "class": "boolean", "default": false, "label": "Infer No-call", "help": "If selected, regions of the genome lacking data in the VCF file will be labelled as \"No-call\""}
+    {"name": "infer_no_call", "class": "boolean", "default": false, "label": "Infer No-call", "help": "If selected, regions of the genome lacking data in the VCF file will be labelled as \"No-call\""},
+    {"name": "file_encoding", "class":"string", "label":"Encoding of File", "optional":true, "help":"What character encoding to use when parsing the file", "default":"utf8"}
   ],
   "outputSpec": [
     {"name": "variants", "class": "array:gtable", "type": {"$and": ["Variants", "gri"]}}
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],
-  "version": "0.0.20",
+  "version": "0.0.21",
   "categories": ["Import"]
 }

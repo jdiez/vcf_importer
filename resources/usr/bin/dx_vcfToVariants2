@@ -129,40 +129,39 @@ def main():
     lastRegion = ['', -1]
         
     header = ''
-    #vcfFile = open(vcfFileName, 'r')
+    vcfFile = open(vcfFileName, 'r')
     #with unpack_and_open(vcfFileName) as vcfFile:
     #for input in open(vcfFileName, 'r'):
-    with unpack_and_open(vcfFileName) as vcfFile:
-        while 1:
-            try:
-                input = vcfFile.next()
-                if count%100000 == 0:
-                    print "Processed count %i variants " % count
-                count += 1
-                if input[0] != "#":
-                    vcfLine = parseVcfLine(input)
-                    regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
-                    if regionIndex > -1:         
-                        if lastRegion[0] != vcfLine['chr'] or lastRegion[1] != regionIndex:
-                            lastRegion[0] = vcfLine['chr']
-                            lastRegion[1] = regionIndex
-                            priors['position'] = regions[vcfLine['chr']][regionIndex][0]
-                            priors['chr'] = vcfLine['chr']
-                        if vcfLine['hi'] > highestObservedInRegion[vcfLine['chr']][regionIndex]:
-                            highestObservedInRegion[vcfLine['chr']][regionIndex] = vcfLine['hi']
-                            if writeRow(variantsTable, vcfLine, compressReference, compressNoCall, refBuffer) == "write ref buffer":
-                                writeReferenceBuffer(variantsTable, refBuffer)
-                        #If there are intervening blank lines, write those as no-call
-                        if vcfLine['lo'] - priors['position'] > 0:
-                            priors['position']
-                            if inferNoCall:
-                                writeCompressedRow(variantsTable, priors['chr'], priors['position'], vcfLine['lo'], 'no-call')
-                        priors['position'] = vcfLine['hi']
-                    else:
-                        writeReferenceBuffer(variantsTable, refBuffer)
-    
-            except StopIteration:
-                break
+    while 1:
+        try:
+            input = vcfFile.next()
+            if count%100000 == 0:
+                print "Processed count %i variants " % count
+            count += 1
+            if input[0] != "#":
+                vcfLine = parseVcfLine(input)
+                regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
+                if regionIndex > -1:         
+                    if lastRegion[0] != vcfLine['chr'] or lastRegion[1] != regionIndex:
+                        lastRegion[0] = vcfLine['chr']
+                        lastRegion[1] = regionIndex
+                        priors['position'] = regions[vcfLine['chr']][regionIndex][0]
+                        priors['chr'] = vcfLine['chr']
+                    if vcfLine['hi'] > highestObservedInRegion[vcfLine['chr']][regionIndex]:
+                        highestObservedInRegion[vcfLine['chr']][regionIndex] = vcfLine['hi']
+                        if writeRow(variantsTable, vcfLine, compressReference, compressNoCall, refBuffer) == "write ref buffer":
+                            writeReferenceBuffer(variantsTable, refBuffer)
+                    #If there are intervening blank lines, write those as no-call
+                    if vcfLine['lo'] - priors['position'] > 0:
+                        priors['position']
+                        if inferNoCall:
+                            writeCompressedRow(variantsTable, priors['chr'], priors['position'], vcfLine['lo'], 'no-call')
+                    priors['position'] = vcfLine['hi']
+                else:
+                    writeReferenceBuffer(variantsTable, refBuffer)
+
+        except StopIteration:
+            break
     writeReferenceBuffer(variantsTable, refBuffer)
 
     if inferNoCall:

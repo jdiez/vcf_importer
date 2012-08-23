@@ -14,7 +14,7 @@
     {"name": "file_encoding", "class":"string", "label":"Encoding of File", "optional":true, "help":"What character encoding to use when parsing the file", "default":"utf8"}
   ],
   "outputSpec": [
-    {"name": "variants", "class": "array:gtable", "type": {"$and": ["Variants", "gri"]}}
+    {"name": "variants", "class": "gtable", "type": {"$and": ["Variants", "gri"]}}
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],

@@ -138,14 +138,11 @@ def main():
     #for input in open(vcfFileName, 'r'):
     while 1:
         try:
-            if encoding != "utf8":
-                try:
-                    rawInput = unicode(vcfFile.next())
-                    input = rawInput.encode('utf8', 'replace')
-                except UnicodeDecodeError:
-                    raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
-            else:
-                input = vcfFile.next()
+            try:
+                rawInput = unicode(vcfFile.next())
+                input = rawInput.encode('utf8', 'replace')
+            except UnicodeDecodeError:
+                raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
             if count%100000 == 0:
                 print "Processed count %i variants " % count
             count += 1

@@ -203,7 +203,7 @@ def parseVcfLine(input):
     ref = tabSplit[3].replace(".","")
     
     
-    hi = lo + len(ref)
+    
 
     #In VCF format, the prior character to a sequence change is given in some cases (Ins, Del)
     #   we are removing this in our format, and so need to figure out which characters to filter
@@ -224,6 +224,7 @@ def parseVcfLine(input):
 
     lo += overlap
     ref = ref[overlap:]
+    hi = lo + len(ref)
     
     for i in range(len(altOptions)):
         altOptions[i] = altOptions[i][overlap:]

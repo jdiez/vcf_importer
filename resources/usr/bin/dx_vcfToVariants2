@@ -222,7 +222,7 @@ def parseVcfLine(input):
     #print altOptions
     #print overlap
 
-    lo -= overlap
+    lo += overlap
     ref = ref[overlap:]
     
     for i in range(len(altOptions)):

@@ -118,9 +118,9 @@ def main(**job_inputs):
     print command
     subprocess.check_call(command, shell=True)
     
-    result = []
+
     table.close()
-    result.append(dxpy.dxlink(table.get_id()))
+    result = dxpy.dxlink(table.get_id())
     
     job_outputs['variants'] = result
     return job_outputs

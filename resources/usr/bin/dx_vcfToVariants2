@@ -222,7 +222,7 @@ def parseVcfLine(input):
     #print altOptions
     #print overlap
 
-    lo += overlap
+    lo -= overlap
     ref = ref[overlap:]
     
     for i in range(len(altOptions)):
@@ -267,24 +267,13 @@ def extractFormatTags(formatColumns, formatData):
     return result
 
 def checkOverlap(ref, altOptions):
-    minOverlap = 0
-    first = True
+    indelObserved = 0
     for x in altOptions:
-        overlap = 0
-        for i in range(len(x)):
-            try:
-                if ref[i] == x[i]:
-                   overlap += 1
-                else:
-                    break
-            except IndexError:
-                break
-        if first:
-            minOverlap = overlap
-            first = False
-        if overlap < minOverlap:
-            minOverlap = overlap
-    return minOverlap
+        if ref[0] != x[0]:
+            return 0
+        if len(x) != len(ref):
+            indelObserved = 1
+    return indelObserved
     
 def isSubSequence(longer, shorter):
     if len(shorter) == 0:
@@ -456,20 +445,20 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
     if allNoCall:
         entry[3] = ''
         if compressNoCall == False:
-            #checkEntry(entry, typeCheck)
+            checkEntry(entry, typeCheck)
             variantsTable.add_rows([[entry][:]])
         return "write ref buffer"
     elif allRef:
         entry[3] = ''
         if compressReference:
-            #checkEntry(entry, typeCheck)
+            checkEntry(entry, typeCheck)
             refBuffer.append(entry[:])
             return "no action"
         else:
-            #checkEntry(entry, typeCheck)
+            checkEntry(entry, typeCheck)
             variantsTable.add_rows([entry[:]])
     else:
-        #checkEntry(entry, typeCheck)
+        checkEntry(entry, typeCheck)
         variantsTable.add_rows([entry[:]])
         return "write ref buffer"
         

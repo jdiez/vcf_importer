@@ -132,17 +132,18 @@ def main():
     lastRegion = ['', -1]
         
     header = ''
-    vcfFile = codecs.open(vcfFileName, 'r', encoding=encoding)
-            
+    #vcfFile = codecs.open(vcfFileName, 'r', encoding=encoding)
+    vcfFile = open(vcfFileName, 'r')       
     #with unpack_and_open(vcfFileName) as vcfFile:
     #for input in open(vcfFileName, 'r'):
     while 1:
         try:
-            try:
-                rawInput = unicode(vcfFile.next())
-                input = rawInput.encode('utf8', 'replace')
-            except UnicodeDecodeError:
-                raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
+            input = vcfFile.next()
+            #try:
+            #    rawInput = unicode(vcfFile.next())
+            #    input = rawInput.encode('utf8', 'replace')
+            #except UnicodeDecodeError:
+            #    raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
             if count%100000 == 0:
                 print "Processed count %i variants " % count
             count += 1
@@ -169,6 +170,8 @@ def main():
                     writeReferenceBuffer(variantsTable, refBuffer)
         except StopIteration:
             break
+        except UnicodeDecodeError:
+            print "UnicodeError"
     writeReferenceBuffer(variantsTable, refBuffer)
 
     if inferNoCall:

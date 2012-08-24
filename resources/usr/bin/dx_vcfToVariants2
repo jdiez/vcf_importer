@@ -158,14 +158,15 @@ def main():
                         priors['chr'] = vcfLine['chr']
                     if vcfLine['hi'] > highestObservedInRegion[vcfLine['chr']][regionIndex]:
                         highestObservedInRegion[vcfLine['chr']][regionIndex] = vcfLine['hi']
-                        if writeRow(variantsTable, vcfLine, compressReference, compressNoCall, refBuffer) == "write ref buffer":
-                            writeReferenceBuffer(variantsTable, refBuffer)
+                    if writeRow(variantsTable, vcfLine, compressReference, compressNoCall, refBuffer) == "write ref buffer":
+                        writeReferenceBuffer(variantsTable, refBuffer)
                     #If there are intervening blank lines, write those as no-call
                     if vcfLine['lo'] - priors['position'] > 0:
                         priors['position'] = vcfLine['hi']
                         if inferNoCall:
                             writeCompressedRow(variantsTable, priors['chr'], priors['position'], vcfLine['lo'], 'no-call')
-                    priors['position'] = vcfLine['hi']
+                    if vcfLine['hi'] > priors['position']:
+                        priors['position'] = vcfLine['hi']
                 else:
                     writeReferenceBuffer(variantsTable, refBuffer)
         except StopIteration:

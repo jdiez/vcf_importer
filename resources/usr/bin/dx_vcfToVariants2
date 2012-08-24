@@ -162,7 +162,7 @@ def main():
                             writeReferenceBuffer(variantsTable, refBuffer)
                     #If there are intervening blank lines, write those as no-call
                     if vcfLine['lo'] - priors['position'] > 0:
-                        priors['position']
+                        priors['position'] = vcfLine['hi']
                         if inferNoCall:
                             writeCompressedRow(variantsTable, priors['chr'], priors['position'], vcfLine['lo'], 'no-call')
                     priors['position'] = vcfLine['hi']
@@ -450,12 +450,18 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
         
     if allNoCall:
         entry[3] = ''
+        #This accounts for blank ref
+        if entry[2] - entry[1] == 0:
+            entry[2] = entry[1]+1
         if compressNoCall == False:
             checkEntry(entry, typeCheck)
             variantsTable.add_rows([[entry][:]])
         return "write ref buffer"
     elif allRef:
         entry[3] = ''
+        #This accounts for blank ref
+        if entry[2] - entry[1] == 0:
+            entry[2] = entry[1]+1
         if compressReference:
             checkEntry(entry, typeCheck)
             refBuffer.append(entry[:])

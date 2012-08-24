@@ -389,15 +389,24 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             for j in range(len(genotypeSplit)):
                 genotypeSplit[j] = int(genotypeSplit[j])
             genotypeSplit.sort()
-            
-            
+        
+        homozygous = True
+        if len(genotypeSplit) > 0:
+            for x in genotypeSplit:
+                if x != genotypeSplit[0]:
+                    homozygous = False
+        
         phasedField = ''
+        allelePos = 0
         for x in genotypeSplit:
             if phasing.get(x) == None:
                 phasedField += './'
+            elif homozygous:
+                phasedField += str(allelePos)+"/"
             else:
                 phasedField += str(phasing[x][0])+'/'
                 phasing[x].pop(0)
+            allelePos += 1
         phasedField = phasedField.rstrip('/')
     
         

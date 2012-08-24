@@ -138,12 +138,12 @@ def main():
     #for input in open(vcfFileName, 'r'):
     while 1:
         try:
-            input = vcfFile.next()
-            #try:
-            #    rawInput = unicode(vcfFile.next())
-            #    input = rawInput.encode('utf8', 'replace')
-            #except UnicodeDecodeError:
-            #    raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
+            #input = vcfFile.next()
+            try:
+                rawInput = unicode(vcfFile.next())
+                input = rawInput.encode('utf8', 'replace')
+            except UnicodeDecodeError:
+                raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
             if count%100000 == 0:
                 print "Processed count %i variants " % count
             count += 1
@@ -272,11 +272,13 @@ def extractFormatTags(formatColumns, formatData):
 
 def checkOverlap(ref, altOptions):
     indelObserved = 0
-    for x in altOptions:
-        if ref[0] != x[0]:
-            return 0
-        if len(x) != len(ref):
-            indelObserved = 1
+    if len(ref) > 0:
+        for x in altOptions:
+            if len(x) > 0:
+                if ref[0] != x[0]:
+                    return 0
+                if len(x) != len(ref):
+                    indelObserved = 1
     return indelObserved
     
 def isSubSequence(longer, shorter):

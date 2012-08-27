@@ -1,6 +1,6 @@
 {
-  "name": "vcf_to_variants_experimental",
-  "title": "Import VCF Experimental",
+  "name": "vcf_to_variants",
+  "title": "Import VCF",
   "summary": "Converts .vcf file to a DNAnexus table",
   "description": "Converts .vcf file to a DNAnexus table for subsequent processing and visualization in the DNAnexus platform",
   "dxapi": "1.03rc",
@@ -18,6 +18,6 @@
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],
-  "version": "0.0.28",
+  "version": "0.0.35",
   "categories": ["Import"]
 }

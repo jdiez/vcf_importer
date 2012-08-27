@@ -91,11 +91,6 @@ def main():
 
     #fileIter = vcfFile.__iter__()
     count = 1
-
-    #Additional data will contain the extra format and info columns that are optional in VCF and may not be
-    #   present in the VCF file. These are stored in an extended table 
-    additionalData = []
-
     refBuffer = []
 
     try:
@@ -146,8 +141,8 @@ def main():
                 raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
             if count%100000 == 0:
                 print "Processed count %i variants " % count
-            count += 1
             if input[0] != "#":
+                print input.strip()
                 vcfLine = parseVcfLine(input)
                 regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
                 if regionIndex > -1:         
@@ -173,7 +168,7 @@ def main():
         except UnicodeDecodeError:
             print "UnicodeError"
     writeReferenceBuffer(variantsTable, refBuffer)
-
+    
     if inferNoCall:
         for chr, reg in highestObservedInRegion.iteritems():
             for i in range(len(reg)):
@@ -369,6 +364,8 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
     entry = [chr, lo, hi, ref, alt, qual, filt, ids]
     entry.extend(appendTags(tagOrder['info'], infoTags))
     
+    
+    
     for i in range(len(samples)):
         genotype = formatTags[i]['format_GT'].replace("|", "/")
         totalCoverage = int(formatTags[i]['format_DP'])
@@ -457,14 +454,14 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
 
         entry.extend([genotype, phasedField, type, sampleVariantQuality, sampleGenotypeQuality, coverage, totalCoverage])
         entry.extend(appendTags(tagOrder['format'], formatTags[i]))
-        
-    if allNoCall:
+
+    if allNoCall and len(samples) > 0:
         entry[3] = ''
         if compressNoCall == False:
             checkEntry(entry, typeCheck)
             variantsTable.add_rows([[entry][:]])
         return "write ref buffer"
-    elif allRef:
+    elif allRef and len(samples) > 0:
         entry[3] = ''
         if compressReference:
             checkEntry(entry, typeCheck)
@@ -475,6 +472,8 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             variantsTable.add_rows([entry[:]])
     else:
         checkEntry(entry, typeCheck)
+        print entry
+        print typeCheck
         variantsTable.add_rows([entry[:]])
         return "write ref buffer"
         

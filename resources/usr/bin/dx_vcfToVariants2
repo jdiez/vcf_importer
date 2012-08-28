@@ -127,13 +127,12 @@ def main():
     lastRegion = ['', -1]
         
     header = ''
-    #vcfFile = codecs.open(vcfFileName, 'r', encoding=encoding)
-    vcfFile = open(vcfFileName, 'r')       
+    vcfFile = codecs.open(vcfFileName, 'r', encoding=encoding)
+    #vcfFile = open(vcfFileName, 'r')       
     #with unpack_and_open(vcfFileName) as vcfFile:
     #for input in open(vcfFileName, 'r'):
     while 1:
         try:
-            #input = vcfFile.next()
             try:
                 rawInput = unicode(vcfFile.next())
                 input = rawInput.encode('utf8', 'replace')
@@ -142,7 +141,6 @@ def main():
             if count%100000 == 0:
                 print "Processed count %i variants " % count
             if input[0] != "#":
-                print input.strip()
                 vcfLine = parseVcfLine(input)
                 regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
                 if regionIndex > -1:         
@@ -375,13 +373,15 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             phased = True
         
         genotypeSplit = re.split("[\|\/]", formatTags[i]['format_GT'])
-        
                 
         phasing = {}
         
         if len(re.split("[\|\/]", formatTags[i]['format_GT'])) == len(re.split("[\|]", formatTags[i]['format_GT'])) and len(re.split("[\|\/]", formatTags[i]['format_GT'])) > 0 and '.' not in genotypeSplit:
             for j in range(len(genotypeSplit)):
-                phasing[int(genotypeSplit[j])].append(j)
+                if phasing.get(int(genotypeSplit[j])) == None:
+                    phasing[int(genotypeSplit[j])] = [j]
+                else:
+                    phasing[int(genotypeSplit[j])].append(j)
             
         if '.' not in genotypeSplit:
             for j in range(len(genotypeSplit)):
@@ -472,8 +472,6 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             variantsTable.add_rows([entry[:]])
     else:
         checkEntry(entry, typeCheck)
-        print entry
-        print typeCheck
         variantsTable.add_rows([entry[:]])
         return "write ref buffer"
         

@@ -18,6 +18,6 @@
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],
-  "version": "0.0.35",
+  "version": "0.0.37",
   "categories": ["Import"]
 }

@@ -8,12 +8,12 @@ import dxpy
 import subprocess
 import time
 import logging
+import codecs
 
 sys.path.append('/usr/local/lib/')
 import magic
 
 logging.basicConfig(level=logging.DEBUG)
-
 
 @dxpy.entry_point('main')
 def main(**job_inputs):
@@ -26,6 +26,19 @@ def main(**job_inputs):
     inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.file')
     
     decompressFile('output.file')
+
+    #if job_inputs['file_encoding'] != "utf8":
+    #    inputFile = codecs.open("output.vcf", 'r', encoding=job_inputs['file_encoding'])
+    #    encodeFile = open("encode.vcf", 'w')
+    #    for line in inputFile:
+    #        try:
+    #            encodeFile.write(line.decode(job_inputs['file_encoding']))
+    #        except UnicodeDecodeError:
+    #            line = unicode(line)
+    #            encodeFile.write(line.encode('utf8', 'replace'))
+    #    encodeFile.close()
+    #    subprocess.call('mv encode.vcf output.vcf', shell=True)
+            
     
     headerInfo = extractHeader('output.vcf')
     
@@ -110,10 +123,6 @@ def main(**job_inputs):
         command += " --infer_no_call"
     if job_inputs['compress_no_call']:
       command += " --compress_no_call"
-    
-    if 'file_encoding' in job_inputs:
-      command += " --encoding " + job_inputs['file_encoding']
-    
     
     print command
     subprocess.check_call(command, shell=True)

@@ -177,8 +177,9 @@ def main():
                 if reg[i] < regions[chr][i][1]:
                     writeCompressedRow(variantsTable, chr, reg[i], regions[chr][i][1], 'no-call')
 
+    variantsTable.flush()
 
-    
+
 def checkWithinRegion(chr, lo, hi, regions):
     for x in regions[chr]:
         if (lo >= x[0] and lo <= x[1]) or (hi >= x[0] and hi <= x[1]):

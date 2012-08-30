@@ -3,7 +3,7 @@
   "title": "Import VCF",
   "summary": "Converts .vcf file to a DNAnexus table",
   "description": "Converts .vcf file to a DNAnexus table for subsequent processing and visualization in the DNAnexus platform",
-  "dxapi": "1.03rc",
+  "dxapi": "1.0.0",
   "inputSpec": [
     {"name": "vcf", "class": "file"},
     {"name": "reference", "class": "record", "type": "ContigSet", "label": "Reference Genome", "help": "The reference genome to call variants against"},

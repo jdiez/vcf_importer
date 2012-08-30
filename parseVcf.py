@@ -8,7 +8,7 @@ import dxpy
 import subprocess
 import time
 import logging
-import codecs
+import os
 
 sys.path.append('/usr/local/lib/')
 import magic
@@ -25,21 +25,9 @@ def main(**job_inputs):
     
     inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.file')
     
-    decompressFile('output.file')
 
-    #if job_inputs['file_encoding'] != "utf8":
-    #    inputFile = codecs.open("output.vcf", 'r', encoding=job_inputs['file_encoding'])
-    #    encodeFile = open("encode.vcf", 'w')
-    #    for line in inputFile:
-    #        try:
-    #            encodeFile.write(line.decode(job_inputs['file_encoding']))
-    #        except UnicodeDecodeError:
-    #            line = unicode(line)
-    #            encodeFile.write(line.encode('utf8', 'replace'))
-    #    encodeFile.close()
-    #    subprocess.call('mv encode.vcf output.vcf', shell=True)
-            
     
+    decompressFile('output.file')
     headerInfo = extractHeader('output.vcf')
     
     variants_schema = [
@@ -48,7 +36,7 @@ def main(**job_inputs):
       {"name": "hi", "type": "int32"},
       {"name": "ref", "type": "string"},
       {"name": "alt", "type": "string"},
-      {"name": "qual", "type": "float"},
+      {"name": "qual", "type": "double"},
       {"name": "filter", "type": "string"},
       {"name": "ids", "type": "string"}
          ]
@@ -72,6 +60,8 @@ def main(**job_inputs):
         description[k] = {'name' : k, 'description' : v['description'], 'type' : v['type'], 'number' : v['number']}
     
     numSamples = len(headerInfo['columns'].strip().split("\t"))
+    if numSamples > 10:
+      raise AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
     #For each sample, write the sample-specific columns
     for i in range(len(headerInfo['columns'].strip().split("\t")[9:])):
       #This prevents name collision in columns
@@ -79,8 +69,8 @@ def main(**job_inputs):
         {"name": "genotype_"+str(i), "type": "string"},
         {"name": "phasing_"+str(i), "type": "string"},
         {"name": "type_"+str(i), "type": "string"},
-        {"name": "variation_qual_"+str(i), "type": "float"},
-        {"name": "genotype_qual_"+str(i), "type": "float"},
+        {"name": "variation_qual_"+str(i), "type": "double"},
+        {"name": "genotype_qual_"+str(i), "type": "double"},
         {"name": "coverage_"+str(i), "type": "string"},
         {"name": "total_coverage_"+str(i), "type": "int32"}
       ])
@@ -100,10 +90,6 @@ def main(**job_inputs):
         name = fileName.split(".")[0]
         for x in fileName.split(".")[1:-1]:
             name += "."+x      
-    
-      
-    
-    print variants_schema
     
     details = {'samples':samples, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'formats':headerInfo['tags']['format'], 'infos':headerInfo['tags']['info']}
     if headerInfo.get('filters') != {}:
@@ -288,7 +274,7 @@ def translateTagTypeToColumnType(tag):
   if tag['type'] == "Integer":
     return 'int32'
   if tag['type'] == "Float":
-    return "float"
+    return "double"
   return "string"
 
 

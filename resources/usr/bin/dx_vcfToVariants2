@@ -11,7 +11,6 @@ import subprocess
 import time
 import logging
 import codecs
-import gc
 
 sys.path.append('/usr/local/lib/')
 logging.basicConfig(level=logging.DEBUG)
@@ -34,8 +33,6 @@ def main():
     parser.add_option("--encoding", dest="encoding", default="utf8", help="Encoding of the imported file")
 
     (opts, args) = parser.parse_args()
-    
-    gc.enable()
     
     variantsTable = dxpy.open_dxgtable(opts.variants_id)
     priors = {'chr':'', 'position':-1}
@@ -108,7 +105,7 @@ def main():
     
     if opts.region_file != "":
         regionText = open(opts.region_file, 'r').read()
-        intervalMatch = re.findall("(\w+):(\d+)-(\d+)", regionText)
+        intervalMatch = re.findall("-L ([^:]*):(\d+)-(\d+)", regionText)
         for x in intervalMatch:
             if regions.get(x[0]) == None:
                 regions[x[0]] = []
@@ -143,7 +140,6 @@ def main():
                 raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
             if count%100000 == 0:
                 print "Processed count %i variants " % count
-                gc.collect()
             if input[0] != "#":
                 vcfLine = parseVcfLine(input)
                 regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
@@ -463,21 +459,21 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
     if allNoCall and len(samples) > 0:
         entry[3] = ''
         if compressNoCall == False:
-            checkEntry(entry, typeCheck)
-            variantsTable.add_rows([[entry]])
+            #checkEntry(entry, typeCheck)
+            variantsTable.add_rows([entry[:]])
         return "write ref buffer"
     elif allRef and len(samples) > 0:
         entry[3] = ''
         if compressReference:
-            checkEntry(entry, typeCheck)
+            #checkEntry(entry, typeCheck)
             refBuffer.append(entry[:])
             return "no action"
         else:
-            checkEntry(entry, typeCheck)
-            variantsTable.add_rows([entry])
+            #checkEntry(entry, typeCheck)
+            variantsTable.add_rows([entry[:]])
     else:
         checkEntry(entry, typeCheck)
-        variantsTable.add_rows([entry])
+        variantsTable.add_rows([entry[:]])
         return "write ref buffer"
         
 def checkLeftPhasing(phased, position):
@@ -506,7 +502,7 @@ def writeCompressedRow(variantsTable, chr, lo, hi, typ):
             entry.extend(['./.', './.'])
         entry.extend([typ, float(missingDefault), float(missingDefault), '', missingDefault ])
         entry.extend(appendTags(tagOrder['format'], {}))
-    variantsTable.add_rows([entry])
+    variantsTable.add_rows([entry[:]])
 
 def writeNoCallRow(variantsTable, chr, lo, hi, tagOrder, tagDefaults):
     entry = [chr, lo, hi, "", ""]
@@ -514,11 +510,11 @@ def writeNoCallRow(variantsTable, chr, lo, hi, tagOrder, tagDefaults):
     for i in samples:
         entry.extend(["", "no-call", 0, 0, '', 0, False])
         entry.extend(appendTags(tagOrder['format'], {}))
-    variantsTable.add_rows([entry])
+    variantsTable.add_rows([entry[:]])
     
 def writeReferenceBuffer(variantsTable, refBuffer):
     row = []
-    for x in refBuffer:
+    for x in refBuffer[:]:
         if row == []:
             row = [x[0], x[1], x[2]]
         elif row[2] == x[1]:
@@ -529,9 +525,7 @@ def writeReferenceBuffer(variantsTable, refBuffer):
     if row != []:
         row.extend(["."])
         writeCompressedRow(variantsTable, row[0], row[1], row[2], 'ref')
-    for x in refBuffer:
-        del x
-    refBuffer = []
+    refBuffer[:] = []
 
 def unpack_and_open(input):
     m = magic.Magic()

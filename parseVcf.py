@@ -9,6 +9,7 @@ import subprocess
 import time
 import logging
 import os
+import dxpy
 
 sys.path.append('/usr/local/lib/')
 import magic
@@ -61,7 +62,7 @@ def main(**job_inputs):
     
     numSamples = len(headerInfo['columns'].strip().split("\t"))
     if numSamples > 10:
-      raise AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
+      raise dxpy.AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
     #For each sample, write the sample-specific columns
     for i in range(len(headerInfo['columns'].strip().split("\t")[9:])):
       #This prevents name collision in columns

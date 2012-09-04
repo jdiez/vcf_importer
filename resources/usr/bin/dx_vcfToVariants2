@@ -137,7 +137,7 @@ def main():
                 rawInput = unicode(vcfFile.next())
                 input = rawInput.encode('utf8', 'replace')
             except UnicodeDecodeError:
-                raise AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
+                raise dxpy.AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
             if count%100000 == 0:
                 print "Processed count %i variants " % count
             if input[0] != "#":

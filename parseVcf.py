@@ -26,10 +26,10 @@ def main(**job_inputs):
     
     inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.file')
     
-
-    
     decompressFile('output.file')
-    headerInfo = extractHeader('output.vcf')
+    
+    elevatedTags = ['format_GT', 'format_DP', 'format_AD']
+    headerInfo = extractHeader('output.vcf', elevatedTags)
     
     variants_schema = [
       {"name": "chr", "type": "string"}, 
@@ -38,19 +38,16 @@ def main(**job_inputs):
       {"name": "ref", "type": "string"},
       {"name": "alt", "type": "string"},
       {"name": "qual", "type": "double"},
-      {"name": "filter", "type": "string"},
       {"name": "ids", "type": "string"}
          ]
     
     description = {}
     samples = []
 
-    print headerInfo
-    print headerInfo['tags']['format']
+    if headerInfo.get('filters') != None:
+      variants_schema.append({"name": "filter", "type": "string"})
 
-    elevatedTags = ['format_GT', 'format_DP', 'format_AD']
     indices = [dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')]
-    
     
     formats = {}
     infos = {}
@@ -127,7 +124,7 @@ def setTableDetails(table, details):
     table.set_details(details)
     
 
-def extractHeader(vcfFileName):
+def extractHeader(vcfFileName, elevatedTags):
   result = {'columns': '', 'tags' : {'format' : {}, 'info' : {} }, 'filters' : {}}
   vcfFile = open(vcfFileName, 'r')
   while 1:
@@ -150,7 +147,8 @@ def extractHeader(vcfFileName):
           number = ['.']
         if len(description) == 0:
           description = ['']
-        result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
+        if "format_"+tag[0] not in elevatedTags:
+          result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
     if line[0] == "#" and line[1] != "#":
       result['columns'] = line.strip()        
     if line == '' or line[0] != "#":

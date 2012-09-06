@@ -107,6 +107,7 @@ def main(**job_inputs):
         command += " --infer_no_call"
     if job_inputs['compress_no_call']:
       command += " --compress_no_call"
+    command += " --encoding "+job_inputs["file_encoding"]
     
     print command
     subprocess.check_call(command, shell=True)

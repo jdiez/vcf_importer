@@ -103,6 +103,12 @@ def main():
     contigNames = contigDetails['names']
     contigSizes = contigDetails['sizes']
     
+    global filtersPresent
+    if variantsTable.get_details().get('filters') == None:
+        filtersPresent = False
+    else:
+        filtersPresent = True
+    
     if opts.region_file != "":
         regionText = open(opts.region_file, 'r').read()
         intervalMatch = re.findall("-L ([^:]*):(\d+)-(\d+)", regionText)
@@ -360,7 +366,9 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
         alt += x.upper()+","
     alt = alt.rstrip(",")
 
-    entry = [chr, lo, hi, ref, alt, qual, filt, ids]
+    entry = [chr, lo, hi, ref, alt, qual, ids]    
+    if filtersPresent:
+        entry.append(filt)
     entry.extend(appendTags(tagOrder['info'], infoTags))
     
     
@@ -432,6 +440,11 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
                 sampleGenotypeQuality = -10.0*float(math.log10(sampleGenotypeQuality))
             except:
                 sampleGenotypeQuality = float(missingDefault)
+        
+        if sampleGenotypeQuality < 0.0:
+            sampleGenotypeQuality = 0.0
+        if sampleVariantQuality < 0.0:
+            variantGenotypeQuality = 0.0
 
         typeList = []
         type = 'no-call'
@@ -472,7 +485,7 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             #checkEntry(entry, typeCheck)
             variantsTable.add_rows([entry[:]])
     else:
-        checkEntry(entry, typeCheck)
+        #checkEntry(entry, typeCheck)
         variantsTable.add_rows([entry[:]])
         return "write ref buffer"
         
@@ -493,7 +506,9 @@ def checkRightPhasing(phased, position):
     return True
 
 def writeCompressedRow(variantsTable, chr, lo, hi, typ):
-    entry = [chr, lo, hi, "", "", float(missingDefault), '', '']
+    entry = [chr, lo, hi, "", "", float(missingDefault), '']
+    if filtersPresent:
+        entry.append('')
     entry.extend(appendTags(tagOrder['info'], {}))
     for i in samples:
         if typ == 'ref':

@@ -57,7 +57,7 @@ def main(**job_inputs):
         variants_schema.append({"name": "info_"+k, "type":translateTagTypeToColumnType(v)})
         description[k] = {'name' : k, 'description' : v['description'], 'type' : v['type'], 'number' : v['number']}
     
-    numSamples = len(headerInfo['columns'].strip().split("\t"))
+    numSamples = len(headerInfo['columns'].strip().split("\t")[9:])
     if numSamples > 10:
       raise dxpy.AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
     #For each sample, write the sample-specific columns

@@ -96,7 +96,7 @@ def main():
     try:
         originalContig = variantsTable.get_details()['original_contigset']
     except:
-        raise Exception("The original reference genome must be attached as a detail")
+        raise dxpy.AppError("The original reference genome must be attached as a detail")
 
     regions = {}
     contigDetails = dxpy.DXRecord(originalContig).get_details()['contigs']
@@ -143,6 +143,7 @@ def main():
                 rawInput = unicode(vcfFile.next())
                 input = rawInput.encode('utf8', 'replace')
             except UnicodeDecodeError:
+                variantsTable.flush()
                 raise dxpy.AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
             if count%100000 == 0:
                 print "Processed count %i variants " % count
@@ -205,9 +206,6 @@ def parseVcfLine(input):
         ids = ''
     ref = tabSplit[3].replace(".","")
     
-    
-    
-
     #In VCF format, the prior character to a sequence change is given in some cases (Ins, Del)
     #   we are removing this in our format, and so need to figure out which characters to filter
     altOptions = []
@@ -370,9 +368,7 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
     if filtersPresent:
         entry.append(filt)
     entry.extend(appendTags(tagOrder['info'], infoTags))
-    
-    
-    
+
     for i in range(len(samples)):
         genotype = formatTags[i]['format_GT'].replace("|", "/")
         totalCoverage = int(formatTags[i]['format_DP'])
@@ -416,7 +412,6 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             allelePos += 1
         phasedField = phasedField.rstrip('/')
     
-        
         sampleVariantQuality = float(missingDefault)
         sampleGenotypeQuality = float(missingDefault)
         
@@ -450,7 +445,7 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
         type = 'no-call'
         for x in genotypeSplit:
             if x != ".":
-                if x == '0':
+                if int(x) == 0:
                     type = 'ref'
                 else:
                     typeList.append(calculateVariantType(ref, altOptions[int(x)-1]))

@@ -44,7 +44,7 @@ def main(**job_inputs):
     description = {}
     samples = []
 
-    if headerInfo.get('filters') != None:
+    if headerInfo.get('filters') != {}:
       variants_schema.append({"name": "filter", "type": "string"})
 
     indices = [dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')]

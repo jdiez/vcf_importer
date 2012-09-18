@@ -95,7 +95,15 @@ def main(**job_inputs):
       
     table = dxpy.new_dxgtable(variants_schema, indices=indices)
     table.set_details(details)
-    table.add_types(["Variants", "gri"])
+    types = ["Variants", "gri"]
+    if 'additional_object_types' in job_inputs:
+      for x in job_inputs['additional_object_types'].split(","):
+        if x != '':
+          types.append(x)
+    table.add_types(types)
+    
+    
+    
     table.rename(name)
 
     command = "dx_vcfToVariants2"
@@ -110,8 +118,15 @@ def main(**job_inputs):
     command += " --encoding "+job_inputs["file_encoding"]
     
     print command
-    subprocess.check_call(command, shell=True)
-    
+    try:
+      subprocess.check_call(command, shell=True)
+    except subprocess.CalledProcessError as e:
+      try:
+        errorData = open("AppError.txt", 'r').read()
+        raise dxpy.AppError(errorData)
+      except IOError:
+        raise dxpy.AppError("An unknown error occurred. Please check the log file")
+        
 
     table.close()
     result = dxpy.dxlink(table.get_id())
@@ -130,7 +145,7 @@ def extractHeader(vcfFileName, elevatedTags):
   vcfFile = open(vcfFileName, 'r')
   while 1:
     line = vcfFile.next().strip()
-    tag = re.findall("ID=(\w+),", line)
+    tag = re.findall("ID=([^,]*),", line)
     if len(tag) > 0:
       tagType = ''
       if line.count("##FORMAT") > 0:
@@ -138,11 +153,11 @@ def extractHeader(vcfFileName, elevatedTags):
       elif line.count("##INFO") > 0:
         tagType = 'info'
       elif line.count("##FILTER") > 0:
-        result['filters'][re.findall("ID=(\w+),", line)[0]] = re.findall('Description="(.*)"', line)[0]
+        result['filters'][re.findall("ID=([^,]*),", line)[0]] = re.findall('Description="(.*)"', line)[0]
 
-      typ = re.findall("Type=(\w+),", line)
+      typ = re.findall("Type=([^,]*),", line)
       if tagType != '':
-        number = re.findall("Number=(\w+)", line)
+        number = re.findall("Number=([^,]*),", line)
         description = re.findall('Description="(.*)"', line)
         if len(number) == 0:
           number = ['.']

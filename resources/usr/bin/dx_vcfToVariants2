@@ -137,14 +137,10 @@ def main():
     #vcfFile = open(vcfFileName, 'r')       
     #with unpack_and_open(vcfFileName) as vcfFile:
     #for input in open(vcfFileName, 'r'):
-    while 1:
-        try:
-            try:
-                rawInput = unicode(vcfFile.next())
-                input = rawInput.encode('utf8', 'replace')
-            except UnicodeDecodeError:
-                variantsTable.flush()
-                raise dxpy.AppError("Could parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
+    try:
+        for line in vcfFile:
+            rawInput = unicode(line)
+            input = rawInput.encode('utf8', 'replace')
             if count%100000 == 0:
                 print "Processed count %i variants " % count
             if input[0] != "#":
@@ -168,11 +164,12 @@ def main():
                         priors['position'] = vcfLine['hi']
                 else:
                     writeReferenceBuffer(variantsTable, refBuffer)
-        except StopIteration:
-            break
-        except UnicodeDecodeError:
-            print "UnicodeError"
-    writeReferenceBuffer(variantsTable, refBuffer)
+        writeReferenceBuffer(variantsTable, refBuffer)
+    except UnicodeDecodeError:
+        errorFile = open("AppError.txt", 'w')
+        errorFile.write("Could not parse some characters in the file, please check the encoding of the file, perhaps it is not "+encoding)
+        errorFile.close()
+        sys.exit(1)
     
     if inferNoCall:
         for chr, reg in highestObservedInRegion.iteritems():
@@ -468,23 +465,23 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
         entry[3] = ''
         if compressNoCall == False:
             #checkEntry(entry, typeCheck)
-            print entry
+            #print entry
             variantsTable.add_rows([entry[:]])
         return "write ref buffer"
     elif allRef and len(samples) > 0:
         entry[3] = ''
         if compressReference:
             #checkEntry(entry, typeCheck)
-            print entry
+            #print entry
             refBuffer.append(entry[:])
             return "no action"
         else:
             #checkEntry(entry, typeCheck)
-            print entry
+            #print entry
             variantsTable.add_rows([entry[:]])
     else:
         #checkEntry(entry, typeCheck)
-        print entry
+        #print entry
         variantsTable.add_rows([entry[:]])
         return "write ref buffer"
         

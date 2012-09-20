@@ -513,7 +513,7 @@ def writeCompressedRow(variantsTable, chr, lo, hi, typ):
             entry.extend(['./.', './.'])
         entry.extend([typ, float(missingDefault), float(missingDefault), '', missingDefault ])
         entry.extend(appendTags(tagOrder['format'], {}))
-    print entry
+    #print entry
     variantsTable.add_rows([entry[:]])
 
 def writeNoCallRow(variantsTable, chr, lo, hi, tagOrder, tagDefaults):

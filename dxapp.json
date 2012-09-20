@@ -12,18 +12,14 @@
     {"name": "compress_no_call", "class": "boolean", "default": false, "label": "Compress No-call", "help": "If selected, contiguous no-calls in the genome will be condensed to one row. This often saves significant space"}, 
     {"name": "infer_no_call", "class": "boolean", "default": false, "label": "Infer No-call", "help": "If selected, regions of the genome lacking data in the VCF file will be labelled as \"No-call\""},
     {"name": "file_encoding", "class":"string", "label":"Encoding of File", "optional":true, "help":"What character encoding to use when parsing the file", "default":"utf8"},
-    {"name": "additional_object_types", "class":"string", "label":"Additional Object Types", "optional":true, "help":"A comma-separated list of additional types to label the resulting variant table with"}
+    {"name": "additional_types", "class":"string", "optional":true, "label": "Additional Types", "help":"A comma separated list of additional types to apply to the variants table. For example, adding \"dbsnp\" (without quotes) would give the variants table type dbsnp"}
+
   ],
   "outputSpec": [
     {"name": "variants", "class": "gtable", "type": {"$and": ["Variants", "gri"]}}
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
-  "details": {
-    "advancedInputs": [
-      "additional_object_types"
-    ]
-  },
   "resources": [],
-  "version": "0.0.68",
+  "version": "0.0.70",
   "categories": ["Import"]
 }

@@ -96,8 +96,8 @@ def main(**job_inputs):
     table = dxpy.new_dxgtable(variants_schema, indices=indices)
     table.set_details(details)
     types = ["Variants", "gri"]
-    if 'additional_object_types' in job_inputs:
-      for x in job_inputs['additional_object_types'].split(","):
+    if 'additional_types' in job_inputs:
+      for x in job_inputs['additional_types'].split(","):
         if x != '':
           types.append(x)
     table.add_types(types)

@@ -102,6 +102,10 @@ def main(**job_inputs):
           types.append(x)
     table.add_types(types)
     
+    if 'tags' in job_input:
+        table.add_tags(job_input['tags'])
+    if 'properties' in job_input:
+        table.set_properties(job_input['properties'])
     
     
     table.rename(name)

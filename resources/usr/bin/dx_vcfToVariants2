@@ -62,8 +62,6 @@ def main():
     
     global tagDefaults
     tagDefaults = {}
-    global missingDefault
-    missingDefault = -2**31
     global tagOrder
     tagOrder = {'format' : [], 'info': []}
     for x in tags:
@@ -75,11 +73,11 @@ def main():
             if x['type'] == 'string':
                 tagDefaults[x['name']] = ''
             if x['type'] == 'int64' or x['type'] == 'int32' or x['type'] == 'int16' or x['type'] == 'int8' or x['type'] == 'uint64' or x['type'] == 'uint32' or x['type'] == 'uint16' or x['type'] == 'uint8':
-                tagDefaults[x['name']] = missingDefault
+                tagDefaults[x['name']] = dxpy.NULL
             if x['type'] == 'boolean':
                 tagDefaults[x['name']] = False
             if x['type'] == 'double':
-                tagDefaults[x['name']] = float(missingDefault)
+                tagDefaults[x['name']] = dxpy.NULL
             if x['name'].count("format") > 0:
                 if x['name'] not in tagOrder['format']:
                     tagOrder['format'].append(x['name'])
@@ -409,8 +407,8 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             allelePos += 1
         phasedField = phasedField.rstrip('/')
     
-        sampleVariantQuality = float(missingDefault)
-        sampleGenotypeQuality = float(missingDefault)
+        sampleVariantQuality = dxpy.NULL
+        sampleGenotypeQuality = dxpy.NULL
         
         if formatTags[i].get("format_PL") != None:
             sampleVariantQuality = 0.0
@@ -427,11 +425,11 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             try:
                 sampleVariantQuality = float(phredProbabilities[0])
             except:
-                sampleVariantQuality = float(missingDefault)
+                sampleVariantQuality = dxpy.NULL
             try:
                 sampleGenotypeQuality = -10.0*float(math.log10(sampleGenotypeQuality))
             except:
-                sampleGenotypeQuality = float(missingDefault)
+                sampleGenotypeQuality = dxpy.NULL
         
         if sampleGenotypeQuality < 0.0:
             sampleGenotypeQuality = 0.0
@@ -502,7 +500,7 @@ def checkRightPhasing(phased, position):
     return True
 
 def writeCompressedRow(variantsTable, chr, lo, hi, typ):
-    entry = [chr, lo, hi, "", "", float(missingDefault), '']
+    entry = [chr, lo, hi, "", "", dxpy.NULL, '']
     if filtersPresent:
         entry.append('')
     entry.extend(appendTags(tagOrder['info'], {}))
@@ -511,7 +509,7 @@ def writeCompressedRow(variantsTable, chr, lo, hi, typ):
             entry.extend(['0/0', '0/1'])
         else:
             entry.extend(['./.', './.'])
-        entry.extend([typ, float(missingDefault), float(missingDefault), '', missingDefault ])
+        entry.extend([typ, dxpy.NULL, dxpy.NULL, '', dxpy.NULL ])
         entry.extend(appendTags(tagOrder['format'], {}))
     #print entry
     variantsTable.add_rows([entry[:]])

@@ -22,8 +22,9 @@ def makeInputs():
     #job.wait_on_done()
     #contig_set = job.describe()["output"]["contig_set"]
 
-    vcf = dxpy.upload_local_file(os.path.join(test_resources_dir, "variants.vcf"), wait_on_close=True)
-    program_input = {"vcf": dxpy.dxlink(vcf), "compress_reference":False, "reference": {"$dnanexus_link":"record-9ykz7KQ00006B3PXk1b00005"}}       
+    vcf = dxpy.upload_local_file(os.path.join(test_resources_dir, "SRR10022_GATK_Subsample.vcf"), wait_on_close=True)
+    program_input = {"vcf": dxpy.dxlink(vcf), "compress_reference":False, "compress_no_call":True, "infer_no_call": False, "reference": {"$dnanexus_link":"record-9ykz7KQ00006B3PXk1b00005"}}
+    #program_input = {"vcf": dxpy.dxlink(vcf), "compress_reference":False, "compress_no_call":True, "infer_no_call": False, "reference": {"$dnanexus_link":"record-9zV2FBQ0000293088JZ00005"}}     
     print program_input
     return program_input
 

@@ -22,7 +22,7 @@
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "resources": [],
-  "version": "0.0.74",
+  "version": "0.0.75",
   "categories": ["Import"],
   "access": {"network":["github.com"]}
 }

@@ -150,8 +150,10 @@ def extractHeader(vcfFileName, elevatedTags):
   while 1:
     line = vcfFile.next().strip()
     tag = re.findall("ID=([^,]*),", line)
+    count = 0
     if len(tag) > 0:
       tagType = ''
+      count += 1
       if line.count("##FORMAT") > 0:
         tagType = 'format'
       elif line.count("##INFO") > 0:
@@ -169,10 +171,24 @@ def extractHeader(vcfFileName, elevatedTags):
           description = ['']
         if tagType+"_"+tag[0] not in elevatedTags:
           result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
-    if line[0] == "#" and line[1] != "#":
-      result['columns'] = line.strip()        
     if line == '' or line[0] != "#":
         break
+    
+    if line[0] == "#":
+        try:
+            if line[1] != "#" and result['columns'] == '':
+                result['columns'] = line.strip()
+            else:
+                raise dxpy.AppError("Could not identify a unique header line signifying the VCF samples.")
+        except:
+            print "ignoring single comment line"
+
+  if count == 0:
+      raise dxpy.AppError("Could not find any VCF-specific format or info tags. Is this a valid VCF?")
+
+  if result['columns'] == '':
+      raise dxpy.AppError("Couldn't find a header line singifying the VCF samples. Is this a valid VCF?")
+
   return result
 
 
@@ -183,7 +199,7 @@ def checkUncompressedFile(input):
     try:
         file_type = m.from_file(input)
     except:
-        raise dxpy.ProgramError("Unable to identify compression format")
+        raise dxpy.AppError("Unable to identify compression format")
 
     print file_type
 
@@ -194,7 +210,7 @@ def checkUncompressedFile(input):
         else:
           return False
     except:
-        raise dxpy.ProgramError("Detected uncompressed input but unable to open file. File may be corrupted.")
+        raise dxpy.AppError("Detected uncompressed input but unable to open file. File may be corrupted.")
   
             
 def unpack_and_open(input):
@@ -204,7 +220,7 @@ def unpack_and_open(input):
     try:
         file_type = m.from_file(input)
     except:
-        raise dxpy.ProgramError("Unable to identify compression format")
+        raise dxpy.AppError("Unable to identify compression format")
 
     print file_type
 
@@ -213,12 +229,12 @@ def unpack_and_open(input):
         if 'ASCII' in file_type:
             return open(input)
     except:
-        raise dxpy.ProgramError("Detected uncompressed input but unable to open file. File may be corrupted.")
+        raise dxpy.AppError("Detected uncompressed input but unable to open file. File may be corrupted.")
 
     # if we find a tar file throw a program error telling the user to unpack it
     print file_type
     if file_type == 'application/x-tar':
-        raise dxpy.ProgramError("Program does not support tar files.  Please unpack.")
+        raise dxpy.AppError("Program does not support tar files.  Please unpack.")
 
     # since we haven't returned, the file is compressed.  Determine what program to use to uncompress
     uncomp_util = None
@@ -240,17 +256,17 @@ def unpack_and_open(input):
         uncomp_type = m.from_buffer(line)
         print uncomp_type
     except:
-        raise dxpy.ProgramError("Error detecting file format after decompression")
+        raise dxpy.AppError("Error detecting file format after decompression")
 
     if uncomp_type == 'POSIX tar archive (GNU)' or 'tar' in uncomp_type:
-        raise dxpy.ProgramError("Found a tar archive after decompression.  Please untar your sequences before importing")
+        raise dxpy.AppError("Found a tar archive after decompression.  Please untar your sequences before importing")
     elif uncomp_type != 'ASCII text':
-        raise dxpy.ProgramError("After decompression found file type other than plain text")
+        raise dxpy.AppError("After decompression found file type other than plain text")
     
     try:
         return subprocess.Popen([uncomp_util, input], stdout=subprocess.PIPE).stdout
     except:
-        raise dxpy.ProgramError("Unable to open compressed input for reading")
+        raise dxpy.AppError("Unable to open compressed input for reading")
 
 def decompressFile(inputFile):
     m = magic.Magic()
@@ -258,7 +274,7 @@ def decompressFile(inputFile):
     try:
         file_type = m.from_file(inputFile)
     except:
-        raise dxpy.ProgramError("Unable to identify compression format")
+        raise dxpy.AppError("Unable to identify compression format")
 
     print file_type
     # if uncompressed open the file and return a handle to it
@@ -268,7 +284,7 @@ def decompressFile(inputFile):
       # if we find a tar file throw a program error telling the user to unpack it
       print file_type
       if file_type == 'application/x-tar':
-          raise dxpy.ProgramError("Program does not support tar files.  Please unpack.")  
+          raise dxpy.AppError("Program does not support tar files.  Please unpack.")  
       uncomp_util = None
       if file_type == 'XZ compressed data':
           subprocess.call("mv output.file output.vcf.xz", shell=True)
@@ -280,9 +296,9 @@ def decompressFile(inputFile):
           subprocess.call('mv output.file output.vcf.gz', shell=True)
           subprocess.call('gzip -d output.vcf.gz', shell=True)
       elif file_type == 'POSIX tar archive (GNU)' or 'tar' in file_type:
-          raise dxpy.ProgramError("Found a tar archive.  Please untar your sequences before importing")
+          raise dxpy.AppError("Found a tar archive.  Please untar your sequences before importing")
       else:
-          raise dxpy.ProgramError("Unsupported compression type.  Supported formats are xz, gzip, bzip, and uncompressed")
+          raise dxpy.AppError("Unsupported compression type.  Supported formats are xz, gzip, bzip, and uncompressed")
 
 
 def translateTagTypeToColumnType(tag):

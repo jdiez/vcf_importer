@@ -167,7 +167,7 @@ def extractHeader(vcfFileName, elevatedTags):
           number = ['.']
         if len(description) == 0:
           description = ['']
-        if "format_"+tag[0] not in elevatedTags:
+        if tagType+"_"+tag[0] not in elevatedTags:
           result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
     if line[0] == "#" and line[1] != "#":
       result['columns'] = line.strip()        

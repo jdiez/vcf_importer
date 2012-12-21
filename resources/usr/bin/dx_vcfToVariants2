@@ -143,7 +143,10 @@ def main():
                 print "Processed count %i variants " % count
             if input[0] != "#":
                 vcfLine = parseVcfLine(input)
-                regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
+                try:
+                    regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
+                except KeyError:
+                    raise dxpy.AppError("There was a mismatch between the reference genome provided and a variant entry. For example: " + line) 
                 if regionIndex > -1:         
                     if lastRegion[0] != vcfLine['chr'] or lastRegion[1] != regionIndex:
                         lastRegion[0] = vcfLine['chr']

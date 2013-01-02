@@ -154,7 +154,6 @@ def extractHeader(vcfFileName, elevatedTags):
       tagType = ''
       if len(tag) > 0:
           tagType = ''
-          count += 1
       if line.count("##FORMAT") > 0:
           tagType = 'format'
       elif line.count("##INFO") > 0:
@@ -185,7 +184,7 @@ def extractHeader(vcfFileName, elevatedTags):
           except:
               print "ignoring single comment line"
 
-  if count == 0:
+  if len(result['tags']['format']) + len(result['tag']['info']) == 0:
       raise dxpy.AppError("Could not find any VCF-specific format or info tags. Is this a valid VCF?")
 
   if result['columns'] == '':

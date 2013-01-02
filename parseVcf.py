@@ -148,40 +148,42 @@ def extractHeader(vcfFileName, elevatedTags):
   result = {'columns': '', 'tags' : {'format' : {}, 'info' : {} }, 'filters' : {}}
   vcfFile = open(vcfFileName, 'r')
   while 1:
-    line = vcfFile.next().strip()
-    tag = re.findall("ID=([^,]*),", line)
-    count = 0
-    if len(tag) > 0:
+      line = vcfFile.next().strip()
+      tag = re.findall("ID=([^,]*),", line)
+      count = 0
       tagType = ''
-      count += 1
+      if len(tag) > 0:
+          tagType = ''
+          count += 1
       if line.count("##FORMAT") > 0:
-        tagType = 'format'
+          tagType = 'format'
       elif line.count("##INFO") > 0:
-        tagType = 'info'
+          tagType = 'info'
       elif line.count("##FILTER") > 0:
-        result['filters'][re.findall("ID=([^,]*),", line)[0]] = re.findall('Description="(.*)"', line)[0]
+          result['filters'][re.findall("ID=([^,]*),", line)[0]] = re.findall('Description="(.*)"', line)[0]
 
       typ = re.findall("Type=([^,]*),", line)
       if tagType != '':
-        number = re.findall("Number=([^,]*),", line)
-        description = re.findall('Description="(.*)"', line)
-        if len(number) == 0:
-          number = ['.']
-        if len(description) == 0:
-          description = ['']
-        if tagType+"_"+tag[0] not in elevatedTags:
-          result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
-    if line == '' or line[0] != "#":
-        break
-    
-    if line[0] == "#":
-        try:
-            if line[1] != "#" and result['columns'] == '':
-                result['columns'] = line.strip()
-            else:
-                raise dxpy.AppError("Could not identify a unique header line signifying the VCF samples.")
-        except:
-            print "ignoring single comment line"
+          number = re.findall("Number=([^,]*),", line)
+          description = re.findall('Description="(.*)"', line)
+          if len(number) == 0:
+              number = ['.']
+          if len(description) == 0:
+              description = ['']
+          if tagType+"_"+tag[0] not in elevatedTags:
+              result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
+      if line == '' or line[0] != "#":
+          break
+  
+      if line[0] == "#":
+          try:
+              if line[1] != "#":
+                  if result['columns'] == '':
+                      result['columns'] = line.strip()
+                  else:
+                      raise dxpy.AppError("Could not identify a unique header line signifying the VCF samples.")
+          except:
+              print "ignoring single comment line"
 
   if count == 0:
       raise dxpy.AppError("Could not find any VCF-specific format or info tags. Is this a valid VCF?")

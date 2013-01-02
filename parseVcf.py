@@ -150,7 +150,6 @@ def extractHeader(vcfFileName, elevatedTags):
   while 1:
       line = vcfFile.next().strip()
       tag = re.findall("ID=([^,]*),", line)
-      count = 0
       tagType = ''
       if len(tag) > 0:
           tagType = ''
@@ -184,7 +183,7 @@ def extractHeader(vcfFileName, elevatedTags):
           except:
               print "ignoring single comment line"
 
-  if len(result['tags']['format']) + len(result['tag']['info']) == 0:
+  if len(result['tags']['format']) + len(result['tags']['info']) == 0:
       raise dxpy.AppError("Could not find any VCF-specific format or info tags. Is this a valid VCF?")
 
   if result['columns'] == '':

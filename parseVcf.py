@@ -46,9 +46,9 @@ def main(**job_inputs):
 
     if headerInfo.get('filters') != {}:
       variants_schema.append({"name": "filter", "type": "string"})
-
     indices = [dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')]
-    
+
+
     formats = {}
     infos = {}
     filters = {}
@@ -60,6 +60,8 @@ def main(**job_inputs):
     numSamples = len(headerInfo['columns'].strip().split("\t")[9:])
     if numSamples > 10:
       raise dxpy.AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
+    if numSamples == 0:
+      indices.append(dxpy.DXGTable.lexicographic_index([["ids", "ASC"]], "ids"))
     #For each sample, write the sample-specific columns
     for i in range(len(headerInfo['columns'].strip().split("\t")[9:])):
       #This prevents name collision in columns
@@ -77,9 +79,7 @@ def main(**job_inputs):
       for k, v in headerInfo['tags']['format'].iteritems():
         if "format_"+k not in elevatedTags:
           variants_schema.append({"name": "format_"+k+"_"+str(i), "type":translateTagTypeToColumnType(v)})
-        
-    #for x in variants_schema:
-    #  print x['name']
+
     
     if 'output name' in job_inputs:
         name =  job_inputs['output name']
@@ -103,7 +103,8 @@ def main(**job_inputs):
     table.add_types(types)
     
     if 'tags' in job_inputs:
-        table.add_tags(job_inputs['tags'])
+        for x in job_inputs['tags']:
+          table.add_tags(x.strip())
     if 'properties' in job_inputs:
         table.set_properties(job_inputs['properties'])
     

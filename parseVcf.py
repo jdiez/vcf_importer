@@ -246,9 +246,9 @@ def unpack_and_open(input):
     elif file_type[:20] == 'gzip compressed data':
         uncomp_util = 'zcat'
     elif file_type == 'POSIX tar archive (GNU)' or 'tar' in file_type:
-        raise dxpy.ProgramError("Found a tar archive.  Please untar your sequences before importing")
+        raise dxpy.AppError("Found a tar archive.  Please untar your sequences before importing")
     else:
-        raise dxpy.ProgramError("Unsupported compression type.  Supported formats are xz, gzip, bzip, and uncompressed")
+        raise dxpy.AppError("Unsupported compression type.  Supported formats are xz, gzip, bzip, and uncompressed")
 
     # with that in hand, open file for reading.  If we find a tar archive then exit with error.
     try:

@@ -21,7 +21,6 @@
     {"name": "variants", "class": "gtable", "type": {"$and": ["Variants", "gri"]}, "label": "Variants", "help": "The resulting Variants table object. (Developers can look at http://wiki.dnanexus.com/Types/Variants for more information)."}
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
-  "resources": [],
   "version": "0.0.75",
   "categories": ["Import"],
   "access": {"network":["github.com"]}

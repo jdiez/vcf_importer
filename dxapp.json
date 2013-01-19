@@ -2,7 +2,6 @@
   "name": "vcf_to_variants",
   "title": "VCF Importer",
   "summary": "Converts a VCF file into a Variants table object",
-  "description": "Converts a VCF file into a Variants table object. (Variants objects can be then used as inputs to certain variation annotation apps, etc.; they can also be visualized in the genome browser).",
   "dxapi": "1.0.0",
   "inputSpec": [
     {"name": "vcf", "class": "file", "label": "VCF file", "help": "The VCF file to be imported."},

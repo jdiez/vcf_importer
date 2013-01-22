@@ -81,8 +81,8 @@ def main(**job_inputs):
           variants_schema.append({"name": "format_"+k+"_"+str(i), "type":translateTagTypeToColumnType(v)})
 
     
-    if 'output name' in job_inputs:
-        name =  job_inputs['output name']
+    if 'output_name' in job_inputs:
+        name =  job_inputs['output_name']
     else:
         fileName = dxpy.DXFile(job_inputs['vcf']['$dnanexus_link']).describe()['name']
         name = fileName.split(".")[0]

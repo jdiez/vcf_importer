@@ -1,5 +1,5 @@
 {
-  "name": "vcf_to_variants",
+  "name": "vcf_importer",
   "title": "VCF Importer",
   "summary": "Converts a VCF file into a Variants table object",
   "dxapi": "1.0.0",
@@ -10,7 +10,7 @@
     {"name": "tags", "class":"array:string", "optional":true, "label":"Tags", "help": "A set of tags (string labels) that will be added to the resulting Variants table object. (You can use tags and properties to better describe and organize your data)."},
     {"name": "properties", "class":"hash", "optional":true, "label":"Properties", "help":"A set of properties (key/value pairs) that will be added to the resulting Variants table object. (You can use tags and properties to better describe and organize your data)."},
     {"name": "compress_reference", "class": "boolean", "default": false, "label": "Condense contiguous reference rows?", "help": "If selected, contiguous reference calls in the genome will be condensed to one row."},
-    {"name": "compress_no_call", "class": "boolean", "default": false, "label": "Condense contiguous no-call rows?", "help": "If selected, contiguous no-calls in the genome (VCF rows for which the genotype is './.') will be condensed to one row."}, 
+    {"name": "compress_no_call", "class": "boolean", "default": false, "label": "Condense contiguous no-call rows?", "help": "If selected, contiguous no-calls in the genome (VCF rows for which the genotype is './.') will be condensed to one row."},
     {"name": "infer_no_call", "class": "boolean", "default": false, "label": "Infer missing as no-call?", "help": "If selected, regions of the genome lacking data in the VCF file will be labelled as \"No-call\"."},
     {"name": "file_encoding", "class":"string", "label":"Input character encoding", "optional":true, "help":"The character encoding to use when parsing the VCF file (optional; default is 'utf8').", "default":"utf8"},
     {"name": "additional_types", "class":"string", "optional":true, "label": "Additional types", "help":"A comma separated list of additional types that the output object will be marked with (by default the output object type is 'Variants', but you can specify additional types here)."}

@@ -21,6 +21,5 @@
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "version": "0.0.75",
-  "categories": ["Import"],
-  "access": {"network":["github.com"]}
+  "categories": ["Import"]
 }

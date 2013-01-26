@@ -1,4 +1,20 @@
 #!/usr/bin/env python
+#
+# Copyright (C) 2013 DNAnexus, Inc.
+#
+# This file is part of vcf_importer.
+#
+#   Licensed under the Apache License, Version 2.0 (the "License"); you may not
+#   use this file except in compliance with the License. You may obtain a copy
+#   of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#   License for the specific language governing permissions and limitations
+#   under the License.
 
 #options [compress_nocall, compress_reference]
 
@@ -18,21 +34,21 @@ logging.basicConfig(level=logging.DEBUG)
 
 @dxpy.entry_point('main')
 def main(**job_inputs):
-  
+
     print "Running VCF to Variants"
     print job_inputs['vcf']
     job_outputs = {}
     header = ''
-    
+
     inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.file')
-    
+
     decompressFile('output.file')
-    
+
     elevatedTags = ['format_GT', 'format_DP', 'format_AD']
     headerInfo = extractHeader('output.vcf', elevatedTags)
-    
+
     variants_schema = [
-      {"name": "chr", "type": "string"}, 
+      {"name": "chr", "type": "string"},
       {"name": "lo", "type": "int32"},
       {"name": "hi", "type": "int32"},
       {"name": "ref", "type": "string"},
@@ -40,7 +56,7 @@ def main(**job_inputs):
       {"name": "qual", "type": "double"},
       {"name": "ids", "type": "string"}
          ]
-    
+
     description = {}
     samples = []
 
@@ -52,11 +68,11 @@ def main(**job_inputs):
     formats = {}
     infos = {}
     filters = {}
-    
+
     for k, v in headerInfo['tags']['info'].iteritems():
         variants_schema.append({"name": "info_"+k, "type":translateTagTypeToColumnType(v)})
         description[k] = {'name' : k, 'description' : v['description'], 'type' : v['type'], 'number' : v['number']}
-    
+
     numSamples = len(headerInfo['columns'].strip().split("\t")[9:])
     if numSamples > 10:
       raise dxpy.AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
@@ -80,19 +96,19 @@ def main(**job_inputs):
         if "format_"+k not in elevatedTags:
           variants_schema.append({"name": "format_"+k+"_"+str(i), "type":translateTagTypeToColumnType(v)})
 
-    
+
     if 'output_name' in job_inputs:
         name =  job_inputs['output_name']
     else:
         fileName = dxpy.DXFile(job_inputs['vcf']['$dnanexus_link']).describe()['name']
         name = fileName.split(".")[0]
         for x in fileName.split(".")[1:-1]:
-            name += "."+x      
-    
+            name += "."+x
+
     details = {'samples':samples, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'formats':headerInfo['tags']['format'], 'infos':headerInfo['tags']['info']}
     if headerInfo.get('filters') != {}:
       details['filters'] = headerInfo['filters']
-      
+
     table = dxpy.new_dxgtable(variants_schema, indices=indices)
     table.set_details(details)
     types = ["Variants", "gri"]
@@ -101,14 +117,14 @@ def main(**job_inputs):
         if x != '':
           types.append(x)
     table.add_types(types)
-    
+
     if 'tags' in job_inputs:
         for x in job_inputs['tags']:
           table.add_tags(x.strip())
     if 'properties' in job_inputs:
         table.set_properties(job_inputs['properties'])
-    
-    
+
+
     table.rename(name)
 
     command = "dx_vcfToVariants2"
@@ -121,7 +137,7 @@ def main(**job_inputs):
     if job_inputs['compress_no_call']:
       command += " --compress_no_call"
     command += " --encoding "+job_inputs["file_encoding"]
-    
+
     print command
     try:
       subprocess.check_call(command, shell=True)
@@ -131,11 +147,11 @@ def main(**job_inputs):
         raise dxpy.AppError(errorData)
       except IOError:
         raise dxpy.AppError("An unknown error occurred. Please check the log file")
-        
+
 
     table.close()
     result = dxpy.dxlink(table.get_id())
-    
+
     job_outputs['variants'] = result
     return job_outputs
 
@@ -143,7 +159,7 @@ def setTableDetails(table, details):
     tableId = table.get_id()
     table = dxpy.open_dxgtable(tableId)
     table.set_details(details)
-    
+
 
 def extractHeader(vcfFileName, elevatedTags):
   result = {'columns': '', 'tags' : {'format' : {}, 'info' : {} }, 'filters' : {}}
@@ -173,7 +189,7 @@ def extractHeader(vcfFileName, elevatedTags):
               result['tags'][tagType][tag[0]] = {'type':typ[0], 'description' : description[0], 'number' : number[0]}
       if line == '' or line[0] != "#":
           break
-  
+
       if line[0] == "#":
           try:
               if line[1] != "#":
@@ -212,8 +228,8 @@ def checkUncompressedFile(input):
           return False
     except:
         raise dxpy.AppError("Detected uncompressed input but unable to open file. File may be corrupted.")
-  
-            
+
+
 def unpack_and_open(input):
     m = magic.Magic()
 
@@ -263,7 +279,7 @@ def unpack_and_open(input):
         raise dxpy.AppError("Found a tar archive after decompression.  Please untar your sequences before importing")
     elif uncomp_type != 'ASCII text':
         raise dxpy.AppError("After decompression found file type other than plain text")
-    
+
     try:
         return subprocess.Popen([uncomp_util, input], stdout=subprocess.PIPE).stdout
     except:
@@ -285,7 +301,7 @@ def decompressFile(inputFile):
       # if we find a tar file throw a program error telling the user to unpack it
       print file_type
       if file_type == 'application/x-tar':
-          raise dxpy.AppError("Program does not support tar files.  Please unpack.")  
+          raise dxpy.AppError("Program does not support tar files.  Please unpack.")
       uncomp_util = None
       if file_type == 'XZ compressed data':
           subprocess.call("mv output.file output.vcf.xz", shell=True)
@@ -315,4 +331,3 @@ def translateTagTypeToColumnType(tag):
 
 
 dxpy.run()
-            

@@ -27,7 +27,6 @@ import logging
 import os
 import dxpy
 
-sys.path.append('/usr/local/lib/')
 import magic
 
 logging.basicConfig(level=logging.DEBUG)

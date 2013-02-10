@@ -28,7 +28,6 @@ import time
 import logging
 import codecs
 
-sys.path.append('/usr/local/lib/')
 import magic
 
 

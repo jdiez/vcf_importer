@@ -19,6 +19,9 @@
   "outputSpec": [
     {"name": "variants", "class": "gtable", "type": {"$and": ["Variants", "gri"]}, "label": "Variants", "help": "The resulting Variants table object. (Developers can look at http://wiki.dnanexus.com/Types/Variants for more information)."}
   ],
+  "details": {
+    "advancedInputs": ["compress_reference", "compress_no_call", "infer_no_call", "additional_types"]
+  },
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
   "version": "0.0.76",
   "categories": ["Import"]

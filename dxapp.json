@@ -23,6 +23,6 @@
     "advancedInputs": ["compress_reference", "compress_no_call", "infer_no_call", "additional_types"]
   },
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
-  "version": "0.0.77",
+  "version": "0.0.78",
   "categories": ["Import"]
 }

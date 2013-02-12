@@ -161,10 +161,13 @@ def main():
                 try:
                     regionIndex = checkWithinRegion(vcfLine['chr'], vcfLine['lo'], vcfLine['hi'], regions)
                 except KeyError:
+                    if regions.get(vcfLine['chr']) == None:
                         errorFile = open("AppError.txt", 'w')
-                        errorFile.write("There was a mismatch between the reference genome provided and a variant entry. For example:\n" + line)
-                        errorFile.close()
-                        sys.exit(1)
+                        errorFile.write("A chromosome found in the VCF file was not found in the reference genome, in line:\n" + line)
+                    else:
+                        errorFile.write("The chromosome position found in the VCF file was outside the range listed for that chromosome in the reference genome, in line:\n" + line)
+                    errorFile.close()
+                    sys.exit(1)
 
                 if regionIndex > -1:
                     if lastRegion[0] != vcfLine['chr'] or lastRegion[1] != regionIndex:

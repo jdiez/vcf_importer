@@ -180,8 +180,7 @@ def extractHeader(vcfFileName, elevatedTags):
 
       typ = re.findall("Type=([^,]*),", line)
       if tagType == 'alt':
-          description = re.findall('Description="(.*)"', line)
-          if len(description) == 0:
+          if tagType == 'alt':
               description = re.findall('Description="(.*)"', line)
               result['tags'][tagType][tag[0]] = {'description' : description[0]}
       elif tagType != '':

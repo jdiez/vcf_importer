@@ -76,8 +76,8 @@ def main(**job_inputs):
     numSamples = len(headerInfo['columns'].strip().split("\t")[9:])
     if numSamples > 10:
       raise dxpy.AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
-    if numSamples == 0:
-      indices.append(dxpy.DXGTable.lexicographic_index([["ids", "ASC"]], "ids"))
+    #if numSamples == 0:
+    #  indices.append(dxpy.DXGTable.lexicographic_index([["ids", "ASC"]], "ids"))
     #For each sample, write the sample-specific columns
     for i in range(len(headerInfo['columns'].strip().split("\t")[9:])):
       #This prevents name collision in columns
@@ -105,7 +105,7 @@ def main(**job_inputs):
         for x in fileName.split(".")[1:-1]:
             name += "."+x
 
-    details = {'samples':samples, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'formats':headerInfo['tags']['format'], 'infos':headerInfo['tags']['info']}
+    details = {'samples':samples, 'original_contigset':job_inputs['reference'], 'original_file':job_inputs['vcf'], 'formats':headerInfo['tags']['format'], 'infos':headerInfo['tags']['info'], 'alts':headerInfo['tags']['alt']}
     if headerInfo.get('filters') != {}:
       details['filters'] = headerInfo['filters']
 
@@ -162,7 +162,7 @@ def setTableDetails(table, details):
 
 
 def extractHeader(vcfFileName, elevatedTags):
-  result = {'columns': '', 'tags' : {'format' : {}, 'info' : {} }, 'filters' : {}}
+  result = {'columns': '', 'tags' : {'format' : {}, 'info' : {}, 'alt': {} }, 'filters' : {}}
   vcfFile = open(vcfFileName, 'r')
   while 1:
       line = vcfFile.next().strip()
@@ -174,11 +174,18 @@ def extractHeader(vcfFileName, elevatedTags):
           tagType = 'format'
       elif line.count("##INFO") > 0:
           tagType = 'info'
+      elif line.count("##ALT") > 0:
+          tagType = 'alt'
       elif line.count("##FILTER") > 0:
           result['filters'][re.findall("ID=([^,]*),", line)[0]] = re.findall('Description="(.*)"', line)[0]
 
       typ = re.findall("Type=([^,]*),", line)
-      if tagType != '':
+      if tagType == 'alt':
+          description = re.findall('Description="(.*)"', line)
+          if len(description) == 0:
+              description = re.findall('Description="(.*)"', line)
+              result['tags'][tagType][tag[0]] = {'description' : description[0]}
+      elif tagType != '':
           number = re.findall("Number=([^,]*),", line)
           description = re.findall('Description="(.*)"', line)
           if len(number) == 0:

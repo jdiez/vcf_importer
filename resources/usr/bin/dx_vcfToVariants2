@@ -379,22 +379,29 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
                 else:
                     formatTags[i][x] = tagDefaults[x]
 
+
+    invalidAlleles = [re.search("[^ATGCNatgcn\.-]", ref)]
+    svtypePresent = (infoTags.get("info_SVTYPE") == True)
+
     alt = ''
     for x in altOptions:
         if altOptions.index(x) > 0:
             alt += ","
         alt += x.upper()
+        invalidAlleles.append(re.search("[^ATGCNatgcn\.-]", alt))
 
     entry = [chr, lo, hi, ref, alt, qual, ids]
     if filtersPresent:
         entry.append(filt)
     entry.extend(appendTags(tagOrder['info'], infoTags))
 
+
     for i in range(len(samples)):
         genotype = formatTags[i]['format_GT'].replace("|", "/")
         totalCoverage = int(formatTags[i]['format_DP'])
         coverage = formatTags[i]['format_AD']
         phased = False
+
         if formatTags[i]['format_GT'].count("|") > 0:
             phased = True
 
@@ -468,15 +475,19 @@ def writeRow(variantsTable, line, compressReference, compressNoCall, refBuffer):
             if x != ".":
                 if int(x) == 0:
                     type = 'ref'
+                elif invalidAlleles[int(x)]:
+                    typeList.append("other")
                 else:
                     typeList.append(calculateVariantType(ref, altOptions[int(x)-1]))
+                
 
         typeList = list(set(typeList))
         if len(typeList) == 1:
             type = typeList[0]
+        elif "other" in typeList or svtypePresent:
+            type = "other"
         elif len(typeList) > 1:
             type = 'mixed'
-
         if type != 'ref':
             allRef = False
         if type != 'no-call':

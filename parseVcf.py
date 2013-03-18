@@ -29,20 +29,18 @@ import dxpy
 
 import magic
 
-logging.basicConfig(level=logging.DEBUG)
-
 @dxpy.entry_point('main')
 def main(**job_inputs):
 
-    print "Running VCF to Variants"
-    print job_inputs['vcf']
     job_outputs = {}
     header = ''
 
+    print "Downloading input VCF file"
     inputFile = dxpy.download_dxfile(job_inputs['vcf'], 'output.file')
 
     decompressFile('output.file')
 
+    print "Constructing table schema"
     elevatedTags = ['format_GT', 'format_DP', 'format_AD']
     headerInfo = extractHeader('output.vcf', elevatedTags)
 
@@ -63,7 +61,6 @@ def main(**job_inputs):
       variants_schema.append({"name": "filter", "type": "string"})
     indices = [dxpy.DXGTable.genomic_range_index("chr","lo","hi", 'gri')]
 
-
     formats = {}
     infos = {}
     filters = {}
@@ -75,8 +72,12 @@ def main(**job_inputs):
     numSamples = len(headerInfo['columns'].strip().split("\t")[9:])
     if numSamples > 10:
       raise dxpy.AppError("The VCF file contained too many samples, can't import a VCF containing more than 10 samples")
-    #if numSamples == 0:
-    #  indices.append(dxpy.DXGTable.lexicographic_index([["ids", "ASC"]], "ids"))
+    if job_inputs['searchable_ids']:
+      indices.append(dxpy.DXGTable.lexicographic_index([
+        dxpy.DXGTable.lexicographic_index_column("ids", True, False),
+        dxpy.DXGTable.lexicographic_index_column("chr"),
+        dxpy.DXGTable.lexicographic_index_column("lo"),
+        dxpy.DXGTable.lexicographic_index_column("hi")], "search"))
     #For each sample, write the sample-specific columns
     for i in range(len(headerInfo['columns'].strip().split("\t")[9:])):
       #This prevents name collision in columns
@@ -137,7 +138,7 @@ def main(**job_inputs):
       command += " --compress_no_call"
     command += " --encoding "+job_inputs["file_encoding"]
 
-    print command
+    print "Importing variants by running:", command
     try:
       subprocess.check_call(command, shell=True)
     except subprocess.CalledProcessError as e:
@@ -147,18 +148,12 @@ def main(**job_inputs):
       except IOError:
         raise dxpy.AppError("An unknown error occurred. Please check the log file")
 
-
+    attach_empty_trackspec(table)
     table.close()
     result = dxpy.dxlink(table.get_id())
 
     job_outputs['variants'] = result
     return job_outputs
-
-def setTableDetails(table, details):
-    tableId = table.get_id()
-    table = dxpy.open_dxgtable(tableId)
-    table.set_details(details)
-
 
 def extractHeader(vcfFileName, elevatedTags):
   result = {'columns': '', 'tags' : {'format' : {}, 'info' : {}, 'alt': {} }, 'filters' : {}}
@@ -214,114 +209,41 @@ def extractHeader(vcfFileName, elevatedTags):
   return result
 
 
-def checkUncompressedFile(input):
-    m = magic.Magic()
-
-    # determine compression format
-    try:
-        file_type = m.from_file(input)
-    except:
-        raise dxpy.AppError("Unable to identify compression format")
-
-    print file_type
-
-    # if uncompressed open the file and return a handle to it
-    try:
-        if 'ASCII' in file_type:
-            return True
-        else:
-          return False
-    except:
-        raise dxpy.AppError("Detected uncompressed input but unable to open file. File may be corrupted.")
-
-
-def unpack_and_open(input):
-    m = magic.Magic()
-
-    # determine compression format
-    try:
-        file_type = m.from_file(input)
-    except:
-        raise dxpy.AppError("Unable to identify compression format")
-
-    print file_type
-
-    # if uncompressed open the file and return a handle to it
-    try:
-        if 'ASCII' in file_type:
-            return open(input)
-    except:
-        raise dxpy.AppError("Detected uncompressed input but unable to open file. File may be corrupted.")
-
-    # if we find a tar file throw a program error telling the user to unpack it
-    print file_type
-    if file_type == 'application/x-tar':
-        raise dxpy.AppError("Program does not support tar files.  Please unpack.")
-
-    # since we haven't returned, the file is compressed.  Determine what program to use to uncompress
-    uncomp_util = None
-    if file_type == 'XZ compressed data':
-        uncomp_util = 'xzcat'
-    elif file_type[:21] == 'bzip2 compressed data':
-        uncomp_util = 'bzcat'
-    elif file_type[:20] == 'gzip compressed data':
-        uncomp_util = 'zcat'
-    elif file_type == 'POSIX tar archive (GNU)' or 'tar' in file_type:
-        raise dxpy.AppError("Found a tar archive.  Please untar your sequences before importing")
-    else:
-        raise dxpy.AppError("Unsupported compression type.  Supported formats are xz, gzip, bzip, and uncompressed")
-
-    # with that in hand, open file for reading.  If we find a tar archive then exit with error.
-    try:
-        with subprocess.Popen([uncomp_util, input], stdout=subprocess.PIPE).stdout as pipe:
-            line = pipe.next()
-        uncomp_type = m.from_buffer(line)
-        print uncomp_type
-    except:
-        raise dxpy.AppError("Error detecting file format after decompression")
-
-    if uncomp_type == 'POSIX tar archive (GNU)' or 'tar' in uncomp_type:
-        raise dxpy.AppError("Found a tar archive after decompression.  Please untar your sequences before importing")
-    elif uncomp_type != 'ASCII text':
-        raise dxpy.AppError("After decompression found file type other than plain text")
-
-    try:
-        return subprocess.Popen([uncomp_util, input], stdout=subprocess.PIPE).stdout
-    except:
-        raise dxpy.AppError("Unable to open compressed input for reading")
-
 def decompressFile(inputFile):
+    print "Detecting input file type"
     m = magic.Magic()
     # determine compression format
     try:
         file_type = m.from_file(inputFile)
     except:
-        raise dxpy.AppError("Unable to identify compression format")
+        raise dxpy.AppError("Unable to identify input file format")
 
-    print file_type
+    print "Input file type is:", file_type
     # if uncompressed open the file and return a handle to it
     if 'ASCII' in file_type:
         subprocess.call("mv output.file output.vcf", shell=True)
     else:
       # if we find a tar file throw a program error telling the user to unpack it
-      print file_type
       if file_type == 'application/x-tar':
-          raise dxpy.AppError("Program does not support tar files.  Please unpack.")
-      uncomp_util = None
+          raise dxpy.AppError("Unsupported compression type (tar). Supported compression formats are xz, gzip, and bzip2")
+      if 'Zip archive data' in file_type:
+          raise dxpy.AppError("Unsupported compression type (zip). Supported compression formats are xz, gzip, and bzip2")
       if file_type == 'XZ compressed data':
+          print "Uncompressing data with xz"
           subprocess.call("mv output.file output.vcf.xz", shell=True)
-          subprocess.call('xz -d output.xz', shell=True)
+          subprocess.call('xz -d output.vcf.xz', shell=True)
       elif file_type[:21] == 'bzip2 compressed data':
+          print "Uncompressing data with bzip2"
           subprocess.call("mv output.file output.vcf.bz2", shell=True)
           subprocess.call('bzip2 -d output.vcf.bz2', shell=True)
       elif file_type[:20] == 'gzip compressed data':
+          print "Uncompressing data with gzip"
           subprocess.call('mv output.file output.vcf.gz', shell=True)
           subprocess.call('gzip -d output.vcf.gz', shell=True)
       elif file_type == 'POSIX tar archive (GNU)' or 'tar' in file_type:
-          raise dxpy.AppError("Found a tar archive.  Please untar your sequences before importing")
+          raise dxpy.AppError("Unsupported compression type (tar). Supported compression formats are xz, gzip, and bzip2")
       else:
-          raise dxpy.AppError("Unsupported compression type.  Supported formats are xz, gzip, bzip, and uncompressed")
-
+          raise dxpy.AppError("Unknown file format.  Supported formats are vcf (text, uncompressed), or compressed with xz, gzip, or bzip2")
 
 def translateTagTypeToColumnType(tag):
   if tag['type'] == "Flag":
@@ -334,5 +256,37 @@ def translateTagTypeToColumnType(tag):
     return "double"
   return "string"
 
+def attach_empty_trackspec(table):
+  description = table.describe(False, True)
+
+  # Extract row count from unclosed table
+  rows = 0
+  for part_id, part_description in description['parts'].items():
+    rows += part_description['length']
+
+  # Calculate genome length
+  genome_length = 0
+  try:
+    genome_length = sum(dxpy.DXRecord(description['details']['original_contigset']).describe(False, True)['details']['contigs']['sizes'])
+  except:
+    return
+
+  # Skip extreme cases
+  if genome_length < 1 or rows < 1:
+    return
+
+  fetch_limit = 10000
+  typical_browser_width = 1200
+  bpp = int((genome_length * fetch_limit) / (rows * typical_browser_width))
+
+  # Skip extremely high numbers
+  if bpp >= genome_length:
+    return
+
+  print "Attaching trackspec so that no data are displayed beyond",bpp,"bases per pixel"
+  table.add_types(["TrackSpec"])
+  details = description['details']
+  details['representations'] = [[0, {"type": "variants", "source": dxpy.dxlink(table.get_id())}], [bpp, {"type": "empty"}]]
+  table.set_details(details)
 
 dxpy.run()

@@ -13,16 +13,16 @@
     {"name": "compress_no_call", "class": "boolean", "default": false, "label": "Condense contiguous no-call rows?", "help": "If selected, contiguous no-calls in the genome (VCF rows for which the genotype is './.') will be condensed to one row."},
     {"name": "infer_no_call", "class": "boolean", "default": false, "label": "Infer missing as no-call?", "help": "If selected, regions of the genome lacking data in the VCF file will be labelled as \"No-call\"."},
     {"name": "file_encoding", "class":"string", "label":"Input character encoding", "optional":true, "help":"The character encoding to use when parsing the VCF file (optional; default is 'utf8').", "default":"utf8"},
-    {"name": "additional_types", "class":"string", "optional":true, "label": "Additional types", "help":"A comma separated list of additional types that the output object will be marked with (by default the output object type is 'Variants', but you can specify additional types here)."}
-
+    {"name": "additional_types", "class":"string", "optional":true, "label": "Additional types", "help":"A comma separated list of additional types that the output object will be marked with (by default the output object type is 'Variants', but you can specify additional types here)."},
+    {"name": "searchable_ids", "class": "boolean", "default": false, "label": "Searchable IDs?", "help": "If selected, the contents of the ID field will be searchable (by prefix) in the genome browser. Use this option when importing a VCF file representing a database (such as dbSNP or dbVar), so that you can type an ID in the genome browser and be able to navigate to the corresponding location of variation."}
   ],
   "outputSpec": [
     {"name": "variants", "class": "gtable", "type": {"$and": ["Variants", "gri"]}, "label": "Variants", "help": "The resulting Variants table object. (Developers can look at http://wiki.dnanexus.com/Types/Variants for more information)."}
   ],
   "details": {
-    "advancedInputs": ["compress_reference", "compress_no_call", "infer_no_call", "additional_types"]
+    "advancedInputs": ["compress_reference", "compress_no_call", "infer_no_call", "additional_types", "tags", "properties", "file_encoding"]
   },
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
-  "version": "0.0.80",
+  "version": "0.0.83",
   "categories": ["Import"]
 }

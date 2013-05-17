@@ -4,22 +4,22 @@
   "summary": "Converts a VCF file into a Variants table object",
   "dxapi": "1.0.0",
   "inputSpec": [
-    {"name": "vcf", "class": "file", "label": "VCF file", "help": "The VCF file to be imported."},
+    {"name": "vcf", "class": "file", "label": "VCF file", "help": "The VCF file to be imported.", "patterns":["*.vcf","*.vcf.gz"]},
     {"name": "reference", "class": "record", "type": "ContigSet", "label": "Reference genome", "help": "The genome that the VCF entries refer to. DNAnexus provides several common genomes in the 'Reference Genomes' public project. (If you need to make your own genome, use the 'Genome Importer' app).", "suggestions":[{"name":"Reference Genomes", "project":"project-B406Bq0bQ9jB3GVk65200001", "path":"/"}]},
     {"name": "output_name", "class":"string", "optional":true, "label": "Output name", "help": "The name of the resulting Variants table object (optional; if not provided, the name will be based on the VCF filename)."},
-    {"name": "tags", "class":"array:string", "optional":true, "label":"Tags", "help": "A set of tags (string labels) that will be added to the resulting Variants table object. (You can use tags and properties to better describe and organize your data)."},
-    {"name": "properties", "class":"hash", "optional":true, "label":"Properties", "help":"A set of properties (key/value pairs) that will be added to the resulting Variants table object. (You can use tags and properties to better describe and organize your data)."},
+    {"name": "tags", "class":"array:string", "optional":true, "label":"Tags", "help": "A set of tags (string labels) that will be added to the resulting Variants table object. (You can use tags and properties to better describe and organize your data).", "group":"Metadata"},
+    {"name": "properties", "class":"hash", "optional":true, "label":"Properties", "help":"A set of properties (key/value pairs) that will be added to the resulting Variants table object. (You can use tags and properties to better describe and organize your data).", "group":"Metadata"},
     {"name": "compress_reference", "class": "boolean", "default": false, "label": "Condense contiguous reference rows?", "help": "If selected, contiguous reference calls in the genome will be condensed to one row.", "group":"Advanced"},
     {"name": "compress_no_call", "class": "boolean", "default": false, "label": "Condense contiguous no-call rows?", "help": "If selected, contiguous no-calls in the genome (VCF rows for which the genotype is './.') will be condensed to one row.", "group":"Advanced"},
     {"name": "infer_no_call", "class": "boolean", "default": false, "label": "Infer missing as no-call?", "help": "If selected, regions of the genome lacking data in the VCF file will be labelled as \"No-call\".", "group":"Advanced"},
     {"name": "file_encoding", "class":"string", "label":"Input character encoding", "optional":true, "help":"The character encoding to use when parsing the VCF file (optional; default is 'utf8').", "default":"utf8", "group":"Advanced"},
-    {"name": "additional_types", "class":"string", "optional":true, "label": "Additional types", "help":"A comma separated list of additional types that the output object will be marked with (by default the output object type is 'Variants', but you can specify additional types here).", "group":"Advanced"},
+    {"name": "additional_types", "class":"string", "optional":true, "label": "Additional types", "help":"A comma separated list of additional types that the output object will be marked with (by default the output object type is 'Variants', but you can specify additional types here).", "group":"Metadata"},
     {"name": "searchable_ids", "class": "boolean", "default": false, "label": "Searchable IDs?", "help": "If selected, the contents of the ID field will be searchable (by prefix) in the genome browser. Use this option when importing a VCF file representing a database (such as dbSNP or dbVar), so that you can type an ID in the genome browser and be able to navigate to the corresponding location of variation."}
   ],
   "outputSpec": [
     {"name": "variants", "class": "gtable", "type": {"$and": ["Variants", "gri"]}, "label": "Variants", "help": "The resulting Variants table object. (Developers can look at http://wiki.dnanexus.com/Types/Variants for more information)."}
   ],
   "runSpec": {"file": "parseVcf.py", "interpreter": "python2.7"},
-  "version": "0.0.84",
+  "version": "0.0.85",
   "categories": ["Import"]
 }

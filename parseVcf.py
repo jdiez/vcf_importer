@@ -119,8 +119,7 @@ def main(**job_inputs):
     table.add_types(types)
 
     if 'tags' in job_inputs:
-        for x in job_inputs['tags']:
-          table.add_tags(x.strip())
+        table.add_tags(job_inputs['tags'])
     if 'properties' in job_inputs:
         table.set_properties(job_inputs['properties'])
 
